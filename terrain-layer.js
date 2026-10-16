@@ -222,8 +222,10 @@ export class Terrain {
         this._seedTarget = SEEDS[index % SEEDS.length];
     }
 
-    setCalm(calm) {
+    setCalm(calm, immediately = false) {
         this._calmTarget = calm ? 0.3 : 1;
+        if (immediately)
+            this._calm = this._calmTarget;
     }
 
     setRenderer(renderer) {

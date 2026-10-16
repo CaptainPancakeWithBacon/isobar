@@ -172,6 +172,7 @@ export default class Driver extends Extension {
         this._checkStyle();
         await this._checkTerrain();
         await this._checkFocus();
+        await this._checkPersistence();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -225,6 +226,45 @@ export default class Driver extends Extension {
         await sleep(2000);
         expect('focus is off after a second click', String(toggle.checked), 'false');
         expect('terrain is back at full strength', String(terrain.calm > 0.95), 'true');
+    }
+
+    // Focus is kept in GSettings, so it survives turning the extension off and on
+    async _checkPersistence() {
+        const uuid = 'isobar@gijs.dev';
+        const ext = () => Main.extensionManager.lookup(uuid).stateObj;
+        const qs = Main.panel.statusArea.quickSettings;
+        const toggle = () => [...descendants(qs.menu.box)].find(a => a.title === 'Focus' && a.has_style_class_name?.('quick-toggle'));
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        const settings = ext().getSettings();
+        expect('focus setting starts off', String(settings.get_boolean('focus')), 'false');
+
+        await this._click(meta());
+        await sleep(800);
+        await this._click(toggle());
+        await sleep(600);
+        expect('switching focus on writes the setting', String(settings.get_boolean('focus')), 'true');
+        qs.menu.close();
+        await sleep(400);
+
+        Main.extensionManager.disableExtension(uuid);
+        await sleep(1200);
+        expect('the toggle is gone while the extension is off', String(!!toggle()), 'false');
+        Main.extensionManager.enableExtension(uuid);
+        await sleep(300);
+        // 300 ms is too short for the terrain to ease down, so this only passes if it starts calm
+        expect('the terrain starts calm after turning the extension back on', String(ext()._terrain.calm < 0.4), 'true');
+        await this._click(meta());
+        await sleep(800);
+        expect('the focus toggle comes back switched on', String(toggle()?.checked), 'true');
+
+        // changing the setting from outside moves the toggle
+        settings.set_boolean('focus', false);
+        await sleep(300);
+        expect('the toggle follows a change of the setting', String(toggle()?.checked), 'false');
+        await sleep(1800);
+        expect('the terrain follows it back to full strength', String(ext()._terrain.calm > 0.95), 'true');
+        qs.menu.close();
+        await sleep(300);
     }
 
     // Cost per renderer at the same redraw rate: nothing, cairo, shader.

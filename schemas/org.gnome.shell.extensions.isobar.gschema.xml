@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.isobar" path="/org/gnome/shell/extensions/isobar/">
+    <key name="focus" type="b">
+      <default>false</default>
+      <summary>Focus mode</summary>
+      <description>Calms the contour terrain on the desktop. Ripples from events still show.</description>
+    </key>
+  </schema>
+</schemalist>

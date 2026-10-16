@@ -4,6 +4,7 @@
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
+glib-compile-schemas "$ROOT/schemas"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 

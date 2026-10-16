@@ -2,5 +2,8 @@
   "uuid": "isobar@gijs.dev",
   "name": "Isobar",
   "description": "A quiet, light shell drawn as a living contour map.",
-  "shell-version": ["46"]
+  "shell-version": [
+    "46"
+  ],
+  "settings-schema": "org.gnome.shell.extensions.isobar"
 }

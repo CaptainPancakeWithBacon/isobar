@@ -26,3 +26,13 @@ MIT, see [`LICENSE`](LICENSE). The fonts used in the prototype, Big Shoulders Di
 ## Logo
 
 Files and rules are in [`brand/`](brand/GUIDELINES.md).
+
+## Install for development
+
+```bash
+glib-compile-schemas schemas
+ln -s "$PWD" ~/.local/share/gnome-shell/extensions/isobar@gijs.dev
+gnome-extensions enable isobar@gijs.dev
+```
+
+On Wayland, log out and in once so the shell picks the extension up.

@@ -100,7 +100,25 @@ Empty desktop, fresh login, 120 s each, in this order, switching the setting liv
 
 The baseline battery power drifted down over the 14 minutes (6.14 W to 5.83 W), which lines up with the order of the runs, so the raw battery column flatters the low rates. The corrected column subtracts a straight line between A6 and A7 and is good to roughly 0.2 W. GPU and CPU did not drift (0.9 to 1.0 %, 1.5 to 1.6 %) and are the reliable numbers.
 
-GPU cost is close to linear in the redraw rate, about 1 point per frame per second. At 0 fps it equals the baseline. CPU has a floor of about 0.8 points at 0 fps, probably the 30 Hz timer that keeps ticking while nothing is drawn; letting the timer sleep while idle would remove most of that. At 8 px of drift per second, 2 fps moves the lines in 4 px steps, 5 fps in 1.6 px steps.
+GPU cost is close to linear in the redraw rate, about 1 point per frame per second. At 0 fps it equals the baseline. CPU had a floor of about 0.8 points at 0 fps, probably the 30 Hz timer that kept ticking while nothing was drawn. The timer now plans its own next step and sleeps when nothing moves (see below). At 8 px of drift per second, 2 fps moves the lines in 4 px steps, 5 fps in 1.6 px steps.
+
+### A timer that sleeps
+
+The fixed 33 ms timer is replaced by one that plans its own next step: 33 ms while a ripple or an easing change runs, `1000 / idle-fps` ms at rest, and none at all when `idle-fps` is 0 or every layer is covered. Anything that changes what is on screen (a ripple, a workspace or Focus change, a new setting, a window starting or stopping to cover the monitor) wakes it. The animation clock only moves while the timer runs, otherwise the landscape would jump to a different pattern after a long sleep, the first time something woke it. A small 2 Hz timer checks for covering windows.
+
+Checked in the headless shell (54 checks): the timer sleeps at `idle-fps` 0 and under a covering window, a ripple wakes it, and after 3 s of sleep and a wake the clock had moved 412 ms, which is the 400 ms the test waited.
+
+Measured in the real session, empty desktop, fresh login, 120 s each, with a closing baseline to read the battery:
+
+| Run | GPU busy | Battery | `gnome-shell` CPU | CPU before the change |
+| --- | --- | --- | --- | --- |
+| A8, Isobar off | 1.2 % | 6.35 W | 1.7 % | |
+| 0 fps | 1.2 % | 6.27 W | 1.9 % | 2.4 % |
+| 5 fps | 6.4 % | 6.46 W | 4.1 % | 4.4 % |
+| 10 fps | 10.4 % | 6.83 W | 6.1 % | 6.5 % |
+| A9, Isobar off | 0.9 % | 6.20 W | 1.6 % | |
+
+At 0 fps Isobar is now level with the baseline: the CPU excess went from 0.8 points to 0.2 and the GPU excess is zero. At 5 and 10 fps the CPU is 0.3 to 0.4 points lower; the GPU is unchanged, as expected. The baseline battery fell by 0.15 W between A8 and A9; correcting for that, 10 fps costs about 0.6 W, 5 fps about 0.2 W and 0 fps nothing measurable (good to about 0.15 W).
 
 ### Part of the visible cost is Blur my Shell
 

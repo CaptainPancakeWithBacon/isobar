@@ -19,7 +19,8 @@ function write(name, text, append = true) {
     stream.close(null);
 }
 
-const log = line => write('driver.log', `${line}\n`);
+const T0 = GLib.get_monotonic_time();
+const log = line => write('driver.log', `[${((GLib.get_monotonic_time() - T0) / 1e6).toFixed(1).padStart(6)}s] ${line}\n`);
 const sleep = ms => new Promise(resolve => GLib.timeout_add(GLib.PRIORITY_DEFAULT, ms, () => {
     resolve();
     return GLib.SOURCE_REMOVE;
@@ -52,13 +53,17 @@ function screenshot(name) {
 
 export default class Driver extends Extension {
     enable() {
-        this._device = Clutter.get_default_backend().get_default_seat()
+        log('driver enable() called');
+        this._device ??= Clutter.get_default_backend().get_default_seat()
             .create_virtual_device(Clutter.InputDeviceType.POINTER_DEVICE);
+        if (this._started)
+            return;
+        this._started = true;
         this._run().catch(e => log(`FAIL driver crashed: ${e.message}`)).finally(() => write('done', 'done', false));
     }
 
     disable() {
-        this._device = null;
+        log('driver disable() called');
     }
 
     // The nested window sits at an offset on the host, so the virtual device's
@@ -173,6 +178,7 @@ export default class Driver extends Extension {
         await this._checkTerrain();
         await this._checkFocus();
         await this._checkPersistence();
+        await this._checkEfficiency();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -252,6 +258,7 @@ export default class Driver extends Extension {
         Main.extensionManager.enableExtension(uuid);
         await sleep(300);
         // 300 ms is too short for the terrain to ease down, so this only passes if it starts calm
+        expect('the terrain shows the current workspace after turning the extension back on', String(ext()._terrain._seedTarget[0] > 1), 'true');
         expect('the terrain starts calm after turning the extension back on', String(ext()._terrain.calm < 0.4), 'true');
         await this._click(meta());
         await sleep(800);
@@ -265,6 +272,58 @@ export default class Driver extends Extension {
         expect('the terrain follows it back to full strength', String(ext()._terrain.calm > 0.95), 'true');
         qs.menu.close();
         await sleep(300);
+    }
+
+    // The terrain should rest when nothing moves and hide when a window covers it
+    async _checkEfficiency() {
+        const terrain = () => Main.extensionManager.lookup('isobar@gijs.dev').stateObj._terrain;
+        const layer = () => terrain().layers[0];
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        const rate = async ms => {
+            const f0 = layer().frames;
+            await sleep(ms);
+            return (layer().frames - f0) / (ms / 1000);
+        };
+
+        await sleep(2500);                       // let easing and old ripples die down
+        const idle = await rate(3000);
+        log(`idle redraw rate: ${idle.toFixed(1)} fps`);
+        expect('idle terrain redraws at about 10 fps', String(idle >= 7 && idle <= 14), 'true');
+        terrain().ripple(640, 400, 1.4);
+        const busy = await rate(1000);
+        log(`redraw rate with a ripple running: ${busy.toFixed(1)} fps`);
+        expect('terrain redraws at about 30 fps while a ripple runs', String(busy >= 22), 'true');
+        await sleep(3500);
+
+        const open = async args => {
+            const proc = Gio.Subprocess.new(['gjs', '-m', `${this.path}/window.js`, ...args], Gio.SubprocessFlags.NONE);
+            await sleep(3500);
+            return {proc, actor: global.get_window_actors().find(a => a.meta_window.title === 'isobar-test-window')};
+        };
+        const close = async ({proc, actor}) => {
+            actor?.meta_window.delete(global.get_current_time());
+            await sleep(1500);
+            proc.force_exit();
+        };
+
+        expect('terrain is visible with no window', String(layer().actor.visible), 'true');
+        const small = await open(['small']);
+        expect('a small test window opened', String(!!small.actor), 'true');
+        await sleep(1200);
+        expect('a small window does not hide the terrain', String(layer().actor.visible), 'true');
+        await close(small);
+
+        const big = await open([]);
+        expect('a maximized test window opened', String(!!big.actor), 'true');
+        await sleep(1500);
+        expect('a window covering the monitor hides the terrain', String(!layer().actor.visible), 'true');
+        const f0 = layer().frames;
+        await sleep(1500);
+        expect('hidden terrain does no work', String(layer().frames - f0), '0');
+        await close(big);
+        await sleep(1500);
+        expect('the terrain comes back when the window closes', String(layer().actor.visible), 'true');
+        expect('and it draws again', String(await rate(1500) > 5), 'true');
     }
 
     // Cost per renderer at the same redraw rate: nothing, cairo, shader.

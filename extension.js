@@ -36,6 +36,7 @@ export default class Isobar extends Extension {
         const wm = global.workspace_manager;
 
         this._terrain = new Terrain();
+        this._terrain.setWorkspace(wm.get_active_workspace_index(), true);
 
         // Focus survives logging out and turning the extension off and on
         this._settings = this.getSettings();

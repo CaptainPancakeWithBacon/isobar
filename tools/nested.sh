@@ -30,8 +30,10 @@ dbus-run-session -- bash -c '
     sleep 10
     python3 "$ROOT/tools/check.py"
   elif [ "${1:-}" = "--drive" ]; then
-    for _ in $(seq 60); do [ -e "$ISOBAR_DRIVER_OUT/done" ] && break; sleep 1; done
+    for _ in $(seq 240); do [ -e "$ISOBAR_DRIVER_OUT/done" ] && break; sleep 1; done
     cat "$ISOBAR_DRIVER_OUT/driver.log"
+    # a driver that never finished has not tested everything, so that is a failure too
+    [ -e "$ISOBAR_DRIVER_OUT/done" ] || { echo "FAIL the driver did not finish within 240 s"; exit 1; }
     ! grep -q FAIL "$ISOBAR_DRIVER_OUT/driver.log" || exit 1
     # the benchmark takes no screenshots, so it has no pixels to check
     [ -n "${ISOBAR_BENCH:-}" ] || { python3 "$ROOT/tools/no_orange.py" "$ISOBAR_DRIVER_OUT" && gjs -m "$ROOT/tools/golden.js" "$ISOBAR_DRIVER_OUT" && python3 "$ROOT/tools/focus_lines.py" "$ISOBAR_DRIVER_OUT"; }

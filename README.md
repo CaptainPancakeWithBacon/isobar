@@ -5,34 +5,102 @@
   </picture>
 </p>
 
-A quiet, light desktop shell for GNOME on Ubuntu, drawn as a living contour map.
+A quiet, light GNOME Shell extension. The desktop is a living contour map, the top bar is a thin ink strip, and quick settings follow the same two colours.
 
-Isobar is a GNOME Shell extension. The top bar is a thin ink strip with workspace pills on the left and quick settings on the right. The desktop is made of contour lines that drift slowly and ripple when something happens: a workspace switch, a notification, the beat of the music. Turn on Focus and the terrain goes still.
+![The Isobar bar and the contour terrain on an empty desktop](docs/screenshots/desktop.png)
 
-**Status:** design prototype only. The extension itself is not written yet.
+## What it does
+
+- **A contour desktop.** A fragment shader draws contour lines as the desktop background, behind your windows. The terrain drifts slowly and ripples when you switch workspace or open quick settings.
+- **A different bar.** Workspace pills on the left (the current one is long), and the date and battery as one button that opens quick settings. The Activities button, the date menu and the system battery icon are hidden.
+- **Quick settings in ink and paper.** Same menu, new colours, white instead of orange as the accent.
+- **Focus.** A toggle in quick settings. While it is on, the terrain calms down to a third of its strength; ripples still show. It remembers its state across logins.
+- **Cheap when you are not looking.** The terrain hides itself while a window covers the whole work area of a monitor, redraws at `idle-fps` (10 by default) when nothing moves, and stops its timer entirely at 0.
+
+![The terrain with Focus off, then with Focus on](docs/screenshots/focus.png)
+
+## Status
+
+An early, personal project. Be careful with it.
+
+- Written for **GNOME Shell 46** and tested on Ubuntu 24.04 on **Wayland**, by automated checks in a headless shell and by hand on one laptop with one monitor.
+- **Not tested:** X11, other GNOME versions, several monitors (a layer is made per monitor, but that has not been looked at), windows with transparency, and the lock screen.
+- Light colours only. The overview, the dock and notifications are not restyled.
+- Not on extensions.gnome.org.
+- **It costs GPU while the terrain is visible.** On one AMD laptop, on battery in `power-saver`, an empty desktop at 10 fps used about 9 points more GPU, 4 to 5 points more CPU and roughly 0.6 W more than without Isobar. At 0 fps and while a window covers the screen the difference was not measurable. Blur my Shell's panel blur accounts for about 40 % of the visible cost if you use it. The numbers, and what did not help, are in [`docs/design.md`](docs/design.md).
+
+## Requirements
+
+- GNOME Shell 46 on Wayland
+- `glib-compile-schemas` (package `libglib2.0-bin` on Ubuntu)
+
+## Install
+
+Until it is packaged, install it by linking the folder:
+
+```bash
+glib-compile-schemas schemas
+ln -s "$PWD" ~/.local/share/gnome-shell/extensions/isobar@gijs.dev
+```
+
+On Wayland, log out and in once so the shell finds the extension. Then:
+
+```bash
+gnome-extensions enable isobar@gijs.dev
+```
+
+The shell keeps the code it loaded until the next login, so after changing a file you need to log in again to see it.
+
+## Settings
+
+How often the terrain redraws while nothing moves, from 0 to 30 (default 10). At 0 it stays still until something happens. This changes live:
+
+```bash
+dconf write /org/gnome/shell/extensions/isobar/idle-fps 5
+```
+
+Focus is the toggle in quick settings. It is stored in `/org/gnome/shell/extensions/isobar/focus`.
+
+## Uninstall
+
+```bash
+gnome-extensions disable isobar@gijs.dev
+rm ~/.local/share/gnome-shell/extensions/isobar@gijs.dev
+dconf reset -f /org/gnome/shell/extensions/isobar/
+```
+
+Disabling puts the bar back. GNOME may briefly disable and enable the extensions that come after Isobar in your list when you toggle it.
+
+## Coucou
+
+Isobar is designed to sit next to [Coucou](https://github.com/Louis-CFM/coucou) (MIT), a small separate app that lives under the top bar. The island below the bar in the design and in the prototype is Coucou's; Isobar draws no island of its own, and it does not include or depend on Coucou. There is no integration yet, so the terrain does not ripple when Coucou expands. That is an open question in [`docs/design.md`](docs/design.md). Coucou is by Louis Raille, and its name, mascot and sounds belong to him.
+
+## Development
+
+Unit tests for the plain logic run under `gjs`:
+
+```bash
+gjs -m tests/bar.test.js
+gjs -m tests/terrain.test.js
+```
+
+The shell itself is tested in a throwaway GNOME Shell that touches nothing of your session. A test-only extension in `tools/driver/` clicks through the bar, checks colours, the pill animation, the Focus setting, the redraw rate and the pausing under windows, and takes screenshots; two scripts then check the screenshots (no orange left in the menu, and the terrain on screen against the tested maths).
+
+```bash
+mkdir -p /tmp/isobar-run
+ISOBAR_HEADLESS=1 ISOBAR_DRIVER_OUT=/tmp/isobar-run tools/nested.sh --drive
+```
+
+It needs `gnome-shell` 46, `gjs`, GTK 4, Python 3 with Pillow, and takes about two minutes. Without `ISOBAR_HEADLESS` it opens a nested window instead, but then your own mouse can disturb the clicks. `tools/measure.sh` averages GPU use, battery power and shell CPU over a number of seconds, and changes nothing.
 
 ## Prototype
 
-Open [`prototype/index.html`](prototype/index.html) in a browser. It needs no build step. Click the workspace pills, the date and battery in the bar, or anywhere on the terrain, and use the two buttons at the bottom to stand in for Coucou.
-
-## Plan
-
-See [`docs/design.md`](docs/design.md).
-
-## License
-
-MIT, see [`LICENSE`](LICENSE). The fonts used in the prototype, Big Shoulders Display and Schibsted Grotesk, are licensed under the SIL Open Font License and are loaded from Google Fonts.
+[`prototype/index.html`](prototype/index.html) is the design in a browser, with no build step: click the workspace pills, the date and battery, or anywhere on the terrain. The two buttons at the bottom stand in for Coucou.
 
 ## Logo
 
 Files and rules are in [`brand/`](brand/GUIDELINES.md).
 
-## Install for development
+## License
 
-```bash
-glib-compile-schemas schemas
-ln -s "$PWD" ~/.local/share/gnome-shell/extensions/isobar@gijs.dev
-gnome-extensions enable isobar@gijs.dev
-```
-
-On Wayland, log out and in once so the shell picks the extension up.
+MIT, see [`LICENSE`](LICENSE). The prototype loads Big Shoulders Display and Schibsted Grotesk from Google Fonts, both under the SIL Open Font License. The wordmark is drawn from Inter Display, also under that licence.

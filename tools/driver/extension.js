@@ -171,6 +171,7 @@ export default class Driver extends Extension {
         await screenshot('03-quick-settings');
         this._checkStyle();
         await this._checkTerrain();
+        await this._checkFocus();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -200,6 +201,30 @@ export default class Driver extends Extension {
         await screenshot('05-golden');
         log(`golden: ${JSON.stringify({now: 123456, seed: terrain.seed, calm: terrain.calm, w: mon.width, h: mon.height})}`);
         terrain.resume();
+    }
+
+    // Focus is a quick settings toggle that calms the terrain
+    async _checkFocus() {
+        const terrain = Main.extensionManager.lookup('isobar@gijs.dev')?.stateObj?._terrain;
+        const qs = Main.panel.statusArea.quickSettings;
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        await this._click(meta());
+        await sleep(800);
+        const toggle = [...descendants(qs.menu.box)].find(a => a.title === 'Focus' && a.has_style_class_name?.('quick-toggle'));
+        expect('focus toggle is in quick settings', String(!!toggle), 'true');
+        if (!toggle)
+            return;
+        expect('focus starts off', String(toggle.checked), 'false');
+        expect('terrain starts at full strength', String(terrain.calm > 0.95), 'true');
+        await this._click(toggle);
+        await sleep(2000);
+        expect('focus is on after a click', String(toggle.checked), 'true');
+        expect('terrain calms down while focus is on', String(terrain.calm < 0.4), 'true');
+        await screenshot('06-focus');
+        await this._click(toggle);
+        await sleep(2000);
+        expect('focus is off after a second click', String(toggle.checked), 'false');
+        expect('terrain is back at full strength', String(terrain.calm > 0.95), 'true');
     }
 
     // Cost per renderer at the same redraw rate: nothing, cairo, shader.

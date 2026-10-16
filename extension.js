@@ -1,10 +1,12 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
 import St from 'gi://St';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import {QuickToggle, SystemIndicator} from 'resource:///org/gnome/shell/ui/quickSettings.js';
 
 import {workspacePills, formatDate, batteryLabel} from './lib/bar.js';
 import {Terrain} from './terrain-layer.js';
@@ -20,12 +22,24 @@ const UPowerProxy = Gio.DBusProxy.makeProxyWrapper(`
   </interface>
 </node>`);
 
+// Focus calms the terrain; ripples from events still show.
+const FocusToggle = GObject.registerClass(class IsobarFocusToggle extends QuickToggle {
+    _init(onChange) {
+        super._init({title: 'Focus', iconName: 'weather-clear-night-symbolic', toggleMode: true});
+        this.connect('notify::checked', () => onChange(this.checked));
+    }
+});
+
 export default class Isobar extends Extension {
     enable() {
         const panel = Main.panel;
         const wm = global.workspace_manager;
 
         this._terrain = new Terrain();
+
+        this._focus = new SystemIndicator();
+        this._focus.quickSettingsItems.push(new FocusToggle(on => this._terrain.setCalm(on)));
+        panel.statusArea.quickSettings.addExternalIndicator(this._focus);
 
         this._hidden = [panel.statusArea.activities, panel.statusArea.dateMenu];
         this._hidden.forEach(item => item.container.hide());
@@ -82,6 +96,8 @@ export default class Isobar extends Extension {
         this._wmIds?.forEach(id => wm.disconnect(id));
         this._upower?.disconnect(this._upowerId);
         Main.panel.statusArea.quickSettings.menu.disconnect(this._qsMenuId);
+        this._focus?.quickSettingsItems.forEach(item => item.destroy());
+        this._focus?.destroy();
         this._terrain?.destroy();
         if (this._battery_icon) {
             this._battery_icon.disconnect(this._batteryIconId);
@@ -92,7 +108,7 @@ export default class Isobar extends Extension {
         this._pills?.destroy();
         this._meta?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+        this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
     }
 
     _buildPills() {

@@ -35,9 +35,11 @@ Type: Big Shoulders Display for numerals and headlines, Schibsted Grotesk for te
 ## Open questions
 
 - How does Isobar learn that Coucou expanded, so the terrain can ripple? Options: Coucou emits a D-Bus signal, or Isobar watches the same notification stream. Not decided.
-- The live terrain cannot be a wallpaper in GNOME. Candidates are the overview background or a lock-screen layer. Needs a spike.
+- Can the live terrain be the desktop background? GNOME Shell paints the wallpaper in `Main.layoutManager._backgroundGroup`, and animated-wallpaper extensions add their own actors there, so it probably can, behind windows. Unverified: multiple monitors, cost per frame in GJS. Fallbacks are the overview background or a lock-screen layer. Needs a spike.
 - Cost of redrawing contours in GJS on every frame. Measure it, and fall back to a lower frame rate if needed.
 
 ## Method
 
-Tests first. Pure logic (the contour tracing, token handling) lives in plain modules that run under `gjs` without the shell. The shell wiring is tested in `gnome-shell --nested --wayland`.
+Tests first. Pure logic (the contour tracing, token handling) lives in plain modules that run under `gjs` without the shell: `gjs -m tests/bar.test.js`.
+
+The shell wiring is tested in a throwaway GNOME Shell with `tools/nested.sh --drive`. A test-only extension (`tools/driver/`) clicks through the bar with a virtual pointer, checks theme colours and the pill animation, and takes screenshots; `tools/no_orange.py` then checks the real pixels of the quick settings menu. Set `ISOBAR_HEADLESS=1` to run without a window, which is the reliable way: in a nested window your own mouse and keyboard can disturb the clicks. Set `ISOBAR_DRIVER_OUT=<dir>` for the log and screenshots.

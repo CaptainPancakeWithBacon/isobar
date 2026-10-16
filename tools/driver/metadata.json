@@ -1,0 +1,6 @@
+{
+  "uuid": "isobar-driver@gijs.dev",
+  "name": "Isobar test driver",
+  "description": "Test only. Clicks through the Isobar bar and takes screenshots inside a nested shell.",
+  "shell-version": ["46"]
+}

@@ -47,6 +47,16 @@ export default class Isobar extends Extension {
         this._meta.connect('clicked', () => panel.statusArea.quickSettings.menu.toggle());
         panel._rightBox.insert_child_at_index(this._meta, 0);
 
+        // the bar shows the battery percentage itself, so drop the system's battery icon
+        this._battery_icon = panel.statusArea.quickSettings._system?._indicator;
+        if (this._battery_icon) {
+            this._batteryIconId = this._battery_icon.connect('notify::visible', () => {
+                if (this._battery_icon.visible)
+                    this._battery_icon.hide();
+            });
+            this._battery_icon.hide();
+        }
+
         this._syncDate();
         this._clock = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 60, () => {
             this._syncDate();
@@ -62,12 +72,16 @@ export default class Isobar extends Extension {
         const wm = global.workspace_manager;
         this._wmIds?.forEach(id => wm.disconnect(id));
         this._upower?.disconnect(this._upowerId);
+        if (this._battery_icon) {
+            this._battery_icon.disconnect(this._batteryIconId);
+            Main.panel.statusArea.quickSettings._system._sync?.();
+        }
         if (this._clock)
             GLib.source_remove(this._clock);
         this._pills?.destroy();
         this._meta?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+        this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
     }
 
     _buildPills() {

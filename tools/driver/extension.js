@@ -321,9 +321,11 @@ export default class Driver extends Extension {
         const f0 = layer().frames;
         await sleep(1500);
         expect('hidden terrain does no work', String(layer().frames - f0), '0');
+        expect('the timer sleeps while a window covers the terrain', String(terrain().sleeping), 'true');
         await close(big);
         await sleep(1500);
         expect('the terrain comes back when the window closes', String(layer().actor.visible), 'true');
+        expect('and the timer is running again', String(terrain().sleeping), 'false');
         expect('and it draws again', String(await rate(1500) > 5), 'true');
     }
 
@@ -347,6 +349,20 @@ export default class Driver extends Extension {
             log(`idle-fps ${fps}: ${measured.toFixed(1)} redraws per second`);
             expect(`idle-fps ${fps} redraws at about ${fps} per second`, String(measured >= lo && measured <= hi), 'true');
         }
+
+        // at 0 the timer sleeps, and the clock stands still so the landscape does not jump when it wakes
+        await sleep(3500);
+        expect('the timer sleeps at idle-fps 0', String(ext()._terrain.sleeping), 'true');
+        const c0 = ext()._terrain.clock;
+        await sleep(3000);
+        expect('the animation clock stands still while it sleeps', String(ext()._terrain.clock === c0), 'true');
+        ext()._terrain.ripple(640, 400, 1.4);
+        expect('a ripple wakes the timer', String(!ext()._terrain.sleeping), 'true');
+        await sleep(400);
+        const moved = ext()._terrain.clock - c0;
+        log(`clock moved ${moved.toFixed(0)} ms after 3 s of sleep and a wake`);
+        expect('the clock carries on from where it stopped', String(moved < 700), 'true');
+        await sleep(4000);
 
         // at 0 a ripple still animates, and the terrain is still again afterwards
         ext()._terrain.ripple(640, 400, 1.4);

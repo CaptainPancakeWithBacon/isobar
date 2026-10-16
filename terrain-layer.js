@@ -6,17 +6,16 @@ import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {contourSegments, sampleField, idleEvery, LEVELS} from './lib/terrain.js';
+import {contourSegments, sampleField, idleInterval, clockStep, FRAME_MS, LEVELS} from './lib/terrain.js';
 
 const CS = 11;            // cairo grid cell in px
-const FRAME_MS = 33;      // ~30 fps
 const GROUND = [0xC8, 0xE0, 0xD8].map(v => v / 255);
 const MINOR = [0x9C, 0xC6, 0xBB].map(v => v / 255);
 const MAJOR = [0x6F, 0xA6, 0x98].map(v => v / 255);
 const SEEDS = [[0, 0], [2.3, 1.1], [4.1, 3.7], [1.2, 5.4]];
 const WINDOW = 120;       // frames kept for the cost statistics
 const MAX_RIPPLES = 4;    // the shader takes four at a time
-const COVER_EVERY = 15;   // look for covering windows twice a second
+const COVER_MS = 500;     // look for covering windows twice a second
 
 const now = () => GLib.get_monotonic_time() / 1000;
 
@@ -196,21 +195,22 @@ export class Terrain {
         this.renderer = renderer;
         this.layers = [];
         this._ripples = [];
-        this._t0 = now();
+        this._animTime = 0;             // ms of animation so far; it only moves while the timer runs
+        this._lastStep = now();
         this._pausedAt = null;
-        this._ticks = 0;
-        this._refresh = true;
-        this._idleEvery = idleEvery(10);
+        this._idleMs = idleInterval(10);
+        this._timer = 0;
         this._seed = [...SEEDS[0]];
         this._seedTarget = SEEDS[0];
         this._calm = 1;
         this._calmTarget = 1;
         this._build();
         this._monitorsId = Main.layoutManager.connect('monitors-changed', () => this._build());
-        this._timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, FRAME_MS, () => {
-            this._tick();
+        this._coverTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, COVER_MS, () => {
+            this._checkCovered();
             return GLib.SOURCE_CONTINUE;
         });
+        this._wake();
     }
 
     get seed() {
@@ -221,25 +221,39 @@ export class Terrain {
         return this._calm;
     }
 
+    /** True while no timer is armed: nothing moves, or every layer is covered. */
+    get sleeping() {
+        return this._timer === 0;
+    }
+
+    /** The animation clock in ms. It stands still while the terrain sleeps. */
+    get clock() {
+        return this._animTime;
+    }
+
     ripple(x, y, amp) {
         this._ripples.push({x, y, amp, t0: this._time()});
+        this._wake();
     }
 
     setWorkspace(index, immediately = false) {
         this._seedTarget = SEEDS[index % SEEDS.length];
         if (immediately)
             this._seed = [...this._seedTarget];
+        this._wake();
     }
 
     /** Redraws per second while nothing moves; 0 keeps the terrain still until something happens. */
     setIdleFps(fps) {
-        this._idleEvery = idleEvery(fps);
+        this._idleMs = idleInterval(fps);
+        this._wake();
     }
 
     setCalm(calm, immediately = false) {
         this._calmTarget = calm ? 0.3 : 1;
         if (immediately)
             this._calm = this._calmTarget;
+        this._wake();
     }
 
     setRenderer(renderer) {
@@ -249,15 +263,16 @@ export class Terrain {
 
     /** Freeze at a given moment (ms since start), settled on the current workspace. */
     pause(at) {
-        this._refresh = true;
         this._pausedAt = at;
         this._seed = [...this._seedTarget];
         this._calm = this._calmTarget;
         this._ripples = [];
+        this._wake();
     }
 
     resume() {
         this._pausedAt = null;
+        this._wake();
     }
 
     stats() {
@@ -278,18 +293,19 @@ export class Terrain {
     }
 
     destroy() {
-        GLib.source_remove(this._timer);
+        if (this._timer)
+            GLib.source_remove(this._timer);
+        GLib.source_remove(this._coverTimer);
         Main.layoutManager.disconnect(this._monitorsId);
         this.layers.forEach(l => l.destroy());
         this.layers = [];
     }
 
     _time() {
-        return this._pausedAt ?? now() - this._t0;
+        return this._pausedAt ?? this._animTime;
     }
 
     _build() {
-        this._refresh = true;
         this.layers.forEach(l => l.destroy());
         const Layer = RENDERERS[this.renderer];
         this.layers = Layer ? Main.layoutManager.monitors.map(monitor => {
@@ -297,6 +313,7 @@ export class Terrain {
             Main.layoutManager._backgroundGroup.add_child(layer.actor);
             return layer;
         }) : [];
+        this._wake();
     }
 
     // A layer is hidden, and its shader not run at all, while a normal window covers the whole work area of its monitor.
@@ -314,19 +331,34 @@ export class Terrain {
                 return;
             layer.covered = covered;
             layer.actor.visible = !covered;
-            this._refresh = true;
+            this._wake();
         });
     }
 
-    _tick() {
-        this._ticks++;
-        if (this._ticks % COVER_EVERY === 0)
-            this._checkCovered();
+    // Run a step soon, replacing whatever was planned. Anything that changes what is on screen calls this.
+    _wake() {
+        if (this._timer)
+            GLib.source_remove(this._timer);
+        this._plan(1);
+    }
+
+    _plan(ms) {
+        this._timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ms, () => {
+            this._timer = 0;
+            this._step();
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    // One redraw, then plan the next one only if there is a reason: quickly while something moves,
+    // at the idle rate otherwise, and not at all when the idle rate is 0 or every layer is covered.
+    _step() {
+        const nowMs = now();
+        if (this._pausedAt === null)
+            this._animTime += clockStep(nowMs - this._lastStep);
+        this._lastStep = nowMs;
         const t = this._time();
-        const alive = this._ripples.filter(r => t - r.t0 < 3200);
-        if (alive.length !== this._ripples.length)
-            this._refresh = true;           // one clean frame once a ripple is gone, or its ghost stays at 0 fps
-        this._ripples = alive;
+        this._ripples = this._ripples.filter(r => t - r.t0 < 3200);
         let easing = false;
         if (this._pausedAt === null) {
             this._seed = this._seed.map((v, i) => v + (this._seedTarget[i] - v) * 0.1);
@@ -334,15 +366,19 @@ export class Terrain {
             easing = Math.abs(this._calm - this._calmTarget) > 0.005 ||
                 this._seed.some((v, i) => Math.abs(v - this._seedTarget[i]) > 0.005);
         }
-        // full speed only while something moves quickly: a ripple, an easing change, a fresh start
-        const busy = easing || this._ripples.length > 0 || this._refresh;
-        if (!busy && this._ticks % this._idleEvery !== 0)
+        const visible = this.layers.some(layer => !layer.covered);
+        if (visible) {
+            const state = {now: t, seed: this._seed, ripples: this._ripples, calm: this._calm};
+            this.layers.forEach(layer => {
+                if (!layer.covered)
+                    layer.update(state);
+            });
+        }
+        if (!visible)
             return;
-        this._refresh = false;
-        const state = {now: t, seed: this._seed, ripples: this._ripples, calm: this._calm};
-        this.layers.forEach(layer => {
-            if (!layer.covered)
-                layer.update(state);
-        });
+        if (easing || this._ripples.length > 0)
+            this._plan(FRAME_MS);
+        else if (this._idleMs > 0)
+            this._plan(this._idleMs);
     }
 }

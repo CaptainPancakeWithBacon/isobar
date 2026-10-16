@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 256 256"
+   version="1.1"
+   id="svg8"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs12" />
+  <title
+     id="title2">Isobar favicon cut</title>
+  <path
+     style="color:#000000;fill:#0f2f33;-inkscape-stroke:none"
+     d="m 104,39 c -49.081087,0 -89,39.918913 -89,89 0,49.08109 39.918913,89 89,89 h 48 c 49.08109,0 89,-39.91891 89,-89 0,-49.081087 -39.91891,-89 -89,-89 z m 0,26 h 48 c 35.12683,0 63,27.873171 63,63 0,35.12683 -27.87317,63 -63,63 H 104 C 68.873171,191 41,163.12683 41,128 41,92.873171 68.873171,65 104,65 Z"
+     id="rect4" />
+  <rect
+     x="84"
+     y="106"
+     width="88"
+     height="44"
+     rx="22"
+     fill="#0F2F33"
+     id="rect6" />
+</svg>

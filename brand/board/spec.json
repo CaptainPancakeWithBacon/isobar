@@ -1,0 +1,28 @@
+{
+  "brand": "Isobar",
+  "tagline": "A quiet shell for GNOME",
+  "brief": "A light GNOME Shell extension for people who like a calm desktop. The mark should feel precise and quiet, and still hint at motion.",
+  "adjectives": ["quiet", "light", "precise", "alive"],
+  "criteria": "Distinct from GNOME's flat blue icons, readable at 16 px, works in one colour.",
+  "industry": "software",
+  "nav": ["Install", "Docs", "GitHub"],
+  "brand_color": "#0F2F33",
+  "greyscale": false,
+  "designer": "Gijs Borghouts",
+  "round": 1,
+  "concepts": [
+    {
+      "name": "Pill contours",
+      "symbol": "../isobar-symbol.svg",
+      "lockup": "../isobar-horizontal.svg",
+      "idea": "The pill from the bar, ringed by contour lines like ripples.",
+      "rationale": [
+        "The pill is the shell's own shape: Coucou's pill and the workspace pill",
+        "Nested stadiums read as isobars on a weather map",
+        "The o in the wordmark repeats the ring"
+      ]
+    }
+  ],
+  "recommendation": "Pill contours, with a two-ring cut for small sizes and a one-ring cut for favicons.",
+  "next_steps": ["Use it on the GitHub repo", "Add the icon to the extension metadata"]
+}

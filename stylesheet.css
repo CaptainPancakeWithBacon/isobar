@@ -1,0 +1,38 @@
+#panel {
+    background-color: #0F2F33;
+}
+
+#panel .panel-button {
+    color: #EAF4F0;
+}
+
+.isobar-pill {
+    padding: 0 5px;
+    min-height: 24px;
+}
+
+.isobar-dot {
+    height: 8px;
+    border-radius: 4px;
+    background-color: #6E9A97;
+}
+
+.isobar-pill:hover .isobar-dot,
+.isobar-dot-active {
+    background-color: #EAF4F0;
+}
+
+.isobar-meta {
+    padding: 0 10px;
+    height: 24px;
+    border-radius: 12px;
+    color: #EAF4F0;
+    font-size: 12px;
+    font-weight: 500;
+    spacing: 14px;
+}
+
+.isobar-meta:hover,
+.isobar-meta:focus {
+    background-color: #1F4A4F;
+}

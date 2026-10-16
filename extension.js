@@ -1,0 +1,106 @@
+import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import St from 'gi://St';
+
+import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+
+import {workspacePills, formatDate, batteryLabel} from './lib/bar.js';
+
+const DOT = 8;
+const LONG = 28;
+
+const UPowerProxy = Gio.DBusProxy.makeProxyWrapper(`
+<node>
+  <interface name="org.freedesktop.UPower.Device">
+    <property name="Percentage" type="d" access="read"/>
+    <property name="IsPresent" type="b" access="read"/>
+  </interface>
+</node>`);
+
+export default class Isobar extends Extension {
+    enable() {
+        const panel = Main.panel;
+        const wm = global.workspace_manager;
+
+        this._hidden = [panel.statusArea.activities, panel.statusArea.dateMenu];
+        this._hidden.forEach(item => item.container.hide());
+
+        this._pills = new St.BoxLayout({style_class: 'isobar-pills', y_align: Clutter.ActorAlign.CENTER});
+        panel._leftBox.insert_child_at_index(this._pills, 0);
+        this._buildPills();
+        this._wmIds = [
+            wm.connect('notify::n-workspaces', () => this._buildPills()),
+            wm.connect('active-workspace-changed', () => this._updatePills()),
+        ];
+
+        this._date = new St.Label({y_align: Clutter.ActorAlign.CENTER});
+        this._battery = new St.Label({y_align: Clutter.ActorAlign.CENTER});
+        const row = new St.BoxLayout({style: 'spacing: 14px;'});
+        row.add_child(this._date);
+        row.add_child(this._battery);
+        this._meta = new St.Button({
+            style_class: 'isobar-meta', child: row, can_focus: true, track_hover: true,
+            y_align: Clutter.ActorAlign.CENTER, accessible_name: 'Quick settings',
+        });
+        this._meta.connect('clicked', () => panel.statusArea.quickSettings.menu.toggle());
+        panel._rightBox.insert_child_at_index(this._meta, 0);
+
+        this._syncDate();
+        this._clock = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 60, () => {
+            this._syncDate();
+            return GLib.SOURCE_CONTINUE;
+        });
+
+        this._upower = new UPowerProxy(Gio.DBus.system, 'org.freedesktop.UPower',
+            '/org/freedesktop/UPower/devices/DisplayDevice', () => this._syncBattery());
+        this._upowerId = this._upower.connect('g-properties-changed', () => this._syncBattery());
+    }
+
+    disable() {
+        const wm = global.workspace_manager;
+        this._wmIds?.forEach(id => wm.disconnect(id));
+        this._upower?.disconnect(this._upowerId);
+        if (this._clock)
+            GLib.source_remove(this._clock);
+        this._pills?.destroy();
+        this._meta?.destroy();
+        this._hidden?.forEach(item => item.container.show());
+        this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+    }
+
+    _buildPills() {
+        const wm = global.workspace_manager;
+        this._pills.destroy_all_children();
+        for (const {index, active} of workspacePills(wm.n_workspaces, wm.get_active_workspace_index())) {
+            const dot = new St.Widget({style_class: 'isobar-dot', y_align: Clutter.ActorAlign.CENTER, y_expand: true, width: active ? LONG : DOT});
+            if (active)
+                dot.add_style_class_name('isobar-dot-active');
+            const pill = new St.Button({style_class: 'isobar-pill', child: dot, can_focus: true, track_hover: true, accessible_name: `Workspace ${index + 1}`});
+            pill.connect('clicked', () => wm.get_workspace_by_index(index)?.activate(global.get_current_time()));
+            this._pills.add_child(pill);
+        }
+    }
+
+    _updatePills() {
+        const current = global.workspace_manager.get_active_workspace_index();
+        this._pills.get_children().forEach((pill, i) => {
+            const dot = pill.get_child();
+            const active = i === current;
+            if (active)
+                dot.add_style_class_name('isobar-dot-active');
+            else
+                dot.remove_style_class_name('isobar-dot-active');
+            dot.ease({width: active ? LONG : DOT, duration: 350, mode: Clutter.AnimationMode.EASE_OUT_BACK});
+        });
+    }
+
+    _syncDate() {
+        this._date.text = formatDate(new Date());
+    }
+
+    _syncBattery() {
+        this._battery.text = this._upower.IsPresent ? batteryLabel(this._upower.Percentage) : '';
+    }
+}

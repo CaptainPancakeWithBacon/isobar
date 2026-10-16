@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Isobar prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Schibsted+Grotesk:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#C8E0D8; --line:#9CC6BB; --major:#6FA698;
+  --ink:#0F2F33; --paper:#EAF4F0; --dim:#9DBDB8; --track:#1F4A4F;
+  --signal:#EAF4F0; --on-signal:#0F2F33;
+  --display:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif;
+  --text:'Schibsted Grotesk',system-ui,sans-serif;
+  --spring:cubic-bezier(.34,1.3,.5,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--ground);font-family:var(--text)}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+#terrain{position:fixed;inset:0}
+
+.bar{position:fixed;left:0;right:0;top:0;height:28px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:var(--ink);color:var(--paper);z-index:5}
+.ws{display:flex;gap:4px}
+.ws{gap:0}
+.ws button{position:relative;width:18px;height:24px;font-size:0;transition:width .4s var(--spring)}
+.ws button::before{content:'';position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:4px;background:var(--dim);transform:translate(-50%,-50%);
+  transition:width .4s var(--spring),background .25s}
+.ws button:hover::before{background:var(--paper)}
+.ws button[aria-current="true"]{width:40px}
+.ws button[aria-current="true"]::before{width:28px;background:var(--paper)}
+.meta{display:flex;gap:14px;font-size:12px;font-weight:500;height:24px;align-items:center;padding:0 8px;border-radius:12px}
+.meta:hover,.meta[aria-expanded="true"]{background:var(--track)}
+
+/* stand-in for the Coucou window: not part of the shell */
+.coucou{--w:64px;--h:12px;position:fixed;left:50%;top:32px;width:var(--w);height:var(--h);transform:translateX(-50%);border-radius:18px;background:var(--ink);color:var(--paper);overflow:hidden;
+  transition:width .55s var(--spring),height .55s var(--spring),background .3s;z-index:4}
+.coucou[data-state="idle"]{background:var(--paper)}
+.pane{position:absolute;inset:0;display:flex;align-items:center;opacity:0;visibility:hidden;transition:opacity .15s,visibility 0s .15s}
+.coucou[data-state="music"] .p-music,.coucou[data-state="notify"] .p-notify{opacity:1;visibility:visible;transition:opacity .25s .2s,visibility 0s}
+.p-music{justify-content:space-between;padding:0 22px}
+.t1{font-weight:500;font-size:14px;line-height:1.25;white-space:nowrap}
+.t2{font-size:12px;color:var(--dim)}
+.bars{display:flex;align-items:flex-end;gap:3px;height:26px}
+.bars i{width:4px;border-radius:2px;background:var(--signal);height:30%;animation:bar .9s ease-in-out infinite alternate}
+.bars i:nth-child(2){animation-duration:.62s}.bars i:nth-child(3){animation-duration:.78s}
+.bars i:nth-child(4){animation-duration:.55s}.bars i:nth-child(5){animation-duration:.84s}
+@keyframes bar{to{height:100%}}
+.p-notify{flex-direction:column;align-items:flex-start;justify-content:center;padding:0 24px}
+.hl{font:800 34px/1 var(--display);color:var(--signal);white-space:nowrap}
+.sub{font-size:13px;margin-top:5px;white-space:nowrap}
+
+/* quick settings, dropped from the right of the bar */
+.qs{position:fixed;right:12px;top:34px;width:280px;padding:6px 22px 22px;border-radius:22px;background:var(--ink);color:var(--paper);z-index:4;
+  transform-origin:top right;transform:scale(.88) translateY(-8px);opacity:0;visibility:hidden;transition:transform .45s var(--spring),opacity .2s,visibility 0s .2s}
+.qs[data-open]{transform:none;opacity:1;visibility:visible;transition:transform .45s var(--spring),opacity .2s,visibility 0s}
+.row{display:flex;justify-content:space-between;font-size:13px;font-weight:500;margin:14px 0 7px}
+.row output{font:800 16px/1 var(--display)}
+.slider{height:14px;border-radius:7px;background:var(--track);position:relative;cursor:ew-resize;touch-action:none}
+.slider i{position:absolute;left:0;top:0;bottom:0;border-radius:7px;background:var(--paper);pointer-events:none}
+.toggles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px}
+.tg{height:40px;border-radius:20px;background:var(--track);color:var(--paper);font-size:13px;font-weight:500;transition:background .2s,color .2s}
+.tg[aria-pressed="true"]{background:var(--signal);color:var(--on-signal)}
+
+.demo{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;z-index:6}
+.demo>button{background:var(--ink);color:var(--paper);border-radius:999px;padding:10px 18px;font-size:13px;font-weight:500}
+.demo>button:hover{background:var(--signal);color:var(--on-signal)}
+
+@media (prefers-reduced-motion:reduce){
+  .coucou,.qs{transition-duration:.01s}
+  .bars i{animation:none;height:60%}
+}
+</style>
+</head>
+<body>
+<canvas id="terrain" aria-hidden="true"></canvas>
+
+<header class="bar">
+  <nav class="ws" aria-label="Workspaces">
+    <button aria-current="true" aria-label="Workspace 1">1</button>
+    <button aria-label="Workspace 2">2</button>
+    <button aria-label="Workspace 3">3</button>
+    <button aria-label="Workspace 4">4</button>
+  </nav>
+  <button class="meta" id="qs-btn" aria-expanded="false" aria-controls="qs" aria-label="Quick settings"><span id="date"></span><span>82%</span></button>
+</header>
+
+<div class="coucou" id="coucou" data-state="idle" aria-hidden="true">
+  <div class="pane p-music">
+    <div><div class="t1">Tell Me More</div><div class="t2">Playing now</div></div>
+    <div class="bars"><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="pane p-notify">
+    <div class="hl">Claude is done</div>
+    <div class="sub">build took 2m 14s</div>
+  </div>
+</div>
+
+<section class="qs" id="qs" aria-label="Quick settings">
+  <div class="row"><span>Volume</span><output id="o-vol">64</output></div>
+  <div class="slider" data-key="vol" role="slider" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="64" tabindex="0"><i></i></div>
+  <div class="row"><span>Brightness</span><output id="o-bri">48</output></div>
+  <div class="slider" data-key="bri" role="slider" aria-label="Brightness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="48" tabindex="0"><i></i></div>
+  <div class="toggles">
+    <button class="tg" id="tg-wifi" aria-pressed="true">Wi-Fi</button>
+    <button class="tg" id="tg-focus" aria-pressed="false">Focus</button>
+    <button class="tg" id="tg-bt" aria-pressed="false">Bluetooth</button>
+  </div>
+</section>
+
+<div class="demo">
+  <button id="d-notify">Coucou: notification</button>
+  <button id="d-music">Coucou: music</button>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const cv = $('#terrain'), ctx = cv.getContext('2d'), coucou = $('#coucou'), qs = $('#qs'), qsBtn = $('#qs-btn');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // terrain ----------------------------------------------------------------
+  const CS = 11;
+  let W, H, cols, rows, field, col = {};
+  const readColors = () => {
+    const s = getComputedStyle(document.documentElement);
+    col.line = s.getPropertyValue('--line').trim();
+    col.major = s.getPropertyValue('--major').trim();
+  };
+  const resize = () => {
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cols = Math.ceil(W / CS) + 1; rows = Math.ceil(H / CS) + 1;
+    field = new Float32Array((cols + 1) * (rows + 1));
+  };
+
+  const seeds = [[0, 0], [2.3, 1.1], [4.1, 3.7], [1.2, 5.4]];
+  const cur = [0, 0];
+  let ws = 0, calm = 1, calmT = 1;
+  const ripples = [];
+  const ripple = (x, y, amp) => ripples.push({ x, y, amp, t: performance.now() });
+
+  // marching squares: edge codes 0 top, 1 right, 2 bottom, 3 left
+  const SEG = [null, [[3,2]], [[2,1]], [[3,1]], [[0,1]], [[0,1],[3,2]], [[0,2]], [[0,3]],
+               [[0,3]], [[0,2]], [[0,3],[2,1]], [[0,1]], [[3,1]], [[2,1]], [[3,2]], null];
+  let X0, Y0, TA, TR, TB, TL;
+  const px = c => c === 0 ? X0 + TA * CS : c === 1 ? X0 + CS : c === 2 ? X0 + TB * CS : X0;
+  const py = c => c === 0 ? Y0 : c === 1 ? Y0 + TR * CS : c === 2 ? Y0 + CS : Y0 + TL * CS;
+  const trace = L => {
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+      const k = j * (cols + 1) + i;
+      const a = field[k], b = field[k + 1], d = field[k + cols + 1], c = field[k + cols + 2];
+      const m = (a > L ? 8 : 0) | (b > L ? 4 : 0) | (c > L ? 2 : 0) | (d > L ? 1 : 0);
+      const segs = SEG[m];
+      if (!segs) continue;
+      X0 = i * CS; Y0 = j * CS;
+      TA = (L - a) / (b - a); TR = (L - b) / (c - b); TB = (L - d) / (c - d); TL = (L - a) / (d - a);
+      for (const s of segs) { ctx.moveTo(px(s[0]), py(s[0])); ctx.lineTo(px(s[1]), py(s[1])); }
+    }
+  };
+
+  const frame = now => {
+    const t = reduce ? 0 : now / 1000;
+    cur[0] += (seeds[ws][0] - cur[0]) * .05;
+    cur[1] += (seeds[ws][1] - cur[1]) * .05;
+    calm += (calmT - calm) * .06;
+    for (let k = ripples.length - 1; k >= 0; k--) if (now - ripples[k].t > 3200) ripples.splice(k, 1);
+    const sx = cur[0], sy = cur[1];
+    for (let j = 0; j <= rows; j++) {
+      const y = j * CS;
+      for (let i = 0; i <= cols; i++) {
+        const x = i * CS;
+        let v = Math.sin(x * .0125 + sx + t * .10) * Math.cos(y * .0165 - sy + t * .08)
+              + .6 * Math.sin((x + y) * .0085 + sx * .7 - t * .06)
+              + .4 * Math.sin(x * .03 - y * .026 + sy + t * .12);
+        v *= calm;
+        for (const r of ripples) {
+          const age = (now - r.t) / 1000, off = Math.hypot(x - r.x, y - r.y) - age * 230;
+          v += r.amp * Math.exp(-off * off / 700) * Math.exp(-age * .9);
+        }
+        field[j * (cols + 1) + i] = v;
+      }
+    }
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineCap = 'round';
+    for (const major of [false, true]) {
+      ctx.beginPath();
+      for (let L = -1.8, n = 0; L <= 1.81; L += .3, n++) if ((n % 4 === 0) === major) trace(L);
+      ctx.strokeStyle = major ? col.major : col.line;
+      ctx.lineWidth = major ? 1.8 : 1;
+      ctx.stroke();
+    }
+    requestAnimationFrame(frame);
+  };
+
+  // Coucou stand-in: the shell would only react to what Coucou does -------
+  const SIZE = { idle: [64, 12], music: [270, 60], notify: [340, 84] };
+  let state = 'idle', musicOn = false, notifyTimer, beatTimer, vol = 64;
+  const base = () => musicOn ? 'music' : 'idle';
+  const dropPoint = () => [innerWidth / 2, 32 + SIZE[state][1]];
+  const setState = (s, amp) => {
+    state = s;
+    coucou.dataset.state = s;
+    coucou.style.setProperty('--w', SIZE[s][0] + 'px');
+    coucou.style.setProperty('--h', SIZE[s][1] + 'px');
+    if (amp) ripple(...dropPoint(), amp);
+  };
+  $('#d-notify').onclick = () => {
+    setState('notify', 2.4);
+    clearTimeout(notifyTimer);
+    notifyTimer = setTimeout(() => setState(base()), 4600);
+  };
+  $('#d-music').onclick = () => {
+    musicOn = !musicOn;
+    clearInterval(beatTimer);
+    if (musicOn) beatTimer = setInterval(() => ripple(...dropPoint(), .25 + vol / 100 * .8), 520);
+    if (state !== 'notify') setState(base(), 1);
+  };
+
+  // workspaces -------------------------------------------------------------
+  const wsBtns = [...document.querySelectorAll('.ws button')];
+  wsBtns.forEach((b, i) => b.addEventListener('click', () => {
+    ws = i;
+    wsBtns.forEach((x, k) => x.setAttribute('aria-current', k === i));
+    const r = b.getBoundingClientRect();
+    ripple(r.left + r.width / 2, 20, 1.3);
+  }));
+
+  // quick settings ---------------------------------------------------------
+  const setQs = open => {
+    qs.toggleAttribute('data-open', open);
+    qsBtn.setAttribute('aria-expanded', open);
+    if (open) ripple(innerWidth - 120, 34, 1.4);
+  };
+  qsBtn.addEventListener('click', e => { e.stopPropagation(); setQs(!qs.hasAttribute('data-open')); });
+  document.addEventListener('click', e => { if (!e.target.closest('.qs')) setQs(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setQs(false); });
+  cv.addEventListener('pointerdown', e => ripple(e.clientX, e.clientY, 1.1));
+
+  const values = { vol: 64, bri: 48 };
+  const paint = el => {
+    const k = el.dataset.key;
+    el.firstElementChild.style.width = values[k] + '%';
+    el.setAttribute('aria-valuenow', values[k]);
+    $('#o-' + k).textContent = values[k];
+  };
+  document.querySelectorAll('.slider').forEach(el => {
+    paint(el);
+    const set = e => {
+      const r = el.getBoundingClientRect();
+      values[el.dataset.key] = Math.round(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * 100);
+      vol = values.vol; paint(el);
+    };
+    el.addEventListener('pointerdown', e => { el.setPointerCapture(e.pointerId); set(e); });
+    el.addEventListener('pointermove', e => { if (el.hasPointerCapture(e.pointerId)) set(e); });
+    el.addEventListener('keydown', e => {
+      const d = e.key === 'ArrowRight' ? 5 : e.key === 'ArrowLeft' ? -5 : 0;
+      if (!d) return;
+      e.preventDefault();
+      values[el.dataset.key] = Math.max(0, Math.min(100, values[el.dataset.key] + d));
+      vol = values.vol; paint(el);
+    });
+  });
+  const flip = (id, fn) => $(id).addEventListener('click', e => {
+    const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+    e.currentTarget.setAttribute('aria-pressed', on);
+    fn(on);
+  });
+  flip('#tg-wifi', () => {});
+  flip('#tg-focus', on => { calmT = on ? .3 : 1; });
+  flip('#tg-bt', () => {});
+
+  const tick = () => {
+    $('#date').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  };
+  tick(); setInterval(tick, 60000);
+
+  readColors(); resize(); setState('idle');
+  addEventListener('resize', resize);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

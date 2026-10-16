@@ -124,6 +124,8 @@ export default class Driver extends Extension {
 
     async _run() {
         await sleep(4000);
+        Main.overview.hide();
+        await sleep(1200);
         const widths = () => pills().map(p => Math.round(p.get_width()));  // [workspace 1, workspace 2]
         log(`pills at rest: ${JSON.stringify(widths())}`);
         await screenshot('01-start');
@@ -166,6 +168,28 @@ export default class Driver extends Extension {
             log('FAIL clicking date and battery did not open quick settings');
         await screenshot('03-quick-settings');
         this._checkStyle();
+        await this._checkTerrain();
+    }
+
+    // The live terrain is the desktop background. It must exist, tick, and stay cheap.
+    async _checkTerrain() {
+        Main.panel.statusArea.quickSettings.menu.close();
+        await sleep(800);
+        const terrain = Main.extensionManager.lookup('isobar@gijs.dev')?.stateObj?._terrain;
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        expect('terrain layers (one per monitor)', String(terrain?.layers.length ?? 0), String(Main.layoutManager.monitors.length));
+        const layer = terrain?.layers[0];
+        expect('terrain sits in the background group', String(!!layer && Main.layoutManager._backgroundGroup.get_children().includes(layer.actor)), 'true');
+        const mon = Main.layoutManager.primaryMonitor;
+        expect('terrain covers the monitor', layer ? `${layer.actor.width}x${layer.actor.height}` : 'none', `${mon.width}x${mon.height}`);
+        if (!layer)
+            return;
+        await screenshot('04-desktop');
+        await sleep(3000);
+        const s = terrain.stats();
+        log(`terrain cost per frame: avg ${s.avgMs.toFixed(2)} ms, p95 ${s.p95Ms.toFixed(2)} ms, max ${s.maxMs.toFixed(2)} ms over ${s.frames} frames (sampling ${s.computeAvgMs.toFixed(2)} ms, trace and draw ${s.paintAvgMs.toFixed(2)} ms)`);
+        expect('terrain is ticking', String(s.frames > 20), 'true');
+        expect('terrain frame cost under budget (avg < 10 ms)', String(s.avgMs < 10), 'true');
     }
 
     // Isobar colours: ink menu, paper accent, no orange, and no second battery icon

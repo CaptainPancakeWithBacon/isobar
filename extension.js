@@ -7,6 +7,7 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {workspacePills, formatDate, batteryLabel} from './lib/bar.js';
+import {Terrain} from './terrain-layer.js';
 
 const DOT = 8;
 const LONG = 28;
@@ -23,6 +24,8 @@ export default class Isobar extends Extension {
     enable() {
         const panel = Main.panel;
         const wm = global.workspace_manager;
+
+        this._terrain = new Terrain();
 
         this._hidden = [panel.statusArea.activities, panel.statusArea.dateMenu];
         this._hidden.forEach(item => item.container.hide());
@@ -46,6 +49,12 @@ export default class Isobar extends Extension {
         });
         this._meta.connect('clicked', () => panel.statusArea.quickSettings.menu.toggle());
         panel._rightBox.insert_child_at_index(this._meta, 0);
+        this._qsMenuId = panel.statusArea.quickSettings.menu.connect('open-state-changed', (_menu, open) => {
+            if (!open)
+                return;
+            const [x, y] = this._meta.get_transformed_position();
+            this._terrain.ripple(x + this._meta.width / 2, y + this._meta.height, 1.4);
+        });
 
         // the bar shows the battery percentage itself, so drop the system's battery icon
         this._battery_icon = panel.statusArea.quickSettings._system?._indicator;
@@ -72,6 +81,8 @@ export default class Isobar extends Extension {
         const wm = global.workspace_manager;
         this._wmIds?.forEach(id => wm.disconnect(id));
         this._upower?.disconnect(this._upowerId);
+        Main.panel.statusArea.quickSettings.menu.disconnect(this._qsMenuId);
+        this._terrain?.destroy();
         if (this._battery_icon) {
             this._battery_icon.disconnect(this._batteryIconId);
             Main.panel.statusArea.quickSettings._system._sync?.();
@@ -81,7 +92,7 @@ export default class Isobar extends Extension {
         this._pills?.destroy();
         this._meta?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+        this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
     }
 
     _buildPills() {
@@ -107,7 +118,12 @@ export default class Isobar extends Extension {
             else
                 dot.remove_style_class_name('isobar-dot-active');
             dot.ease({width: active ? LONG : DOT, duration: 350, mode: Clutter.AnimationMode.EASE_OUT_BACK});
+            if (active) {
+                const [x, y] = pill.get_transformed_position();
+                this._terrain.ripple(x + DOT, y + pill.height / 2, 1.3);
+            }
         });
+        this._terrain.setWorkspace(current);
     }
 
     _syncDate() {

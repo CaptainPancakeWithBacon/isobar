@@ -1,24 +1,110 @@
+import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {contourSegments, sampleField} from './lib/terrain.js';
+import {contourSegments, sampleField, LEVELS} from './lib/terrain.js';
 
-const CS = 11;            // grid cell in px
+const CS = 11;            // cairo grid cell in px
 const FRAME_MS = 33;      // ~30 fps
-const LEVELS = Array.from({length: 13}, (_, n) => -1.8 + n * 0.3);
 const GROUND = [0xC8, 0xE0, 0xD8].map(v => v / 255);
 const MINOR = [0x9C, 0xC6, 0xBB].map(v => v / 255);
 const MAJOR = [0x6F, 0xA6, 0x98].map(v => v / 255);
 const SEEDS = [[0, 0], [2.3, 1.1], [4.1, 3.7], [1.2, 5.4]];
 const WINDOW = 120;       // frames kept for the cost statistics
+const MAX_RIPPLES = 4;    // the shader takes four at a time
 
 const now = () => GLib.get_monotonic_time() / 1000;
 
-class Layer {
+// The same maths as lib/terrain.js, evaluated per pixel on the GPU.
+const FRAGMENT = `
+uniform float uT;
+uniform float uSx;
+uniform float uSy;
+uniform float uCalm;
+uniform float uW;
+uniform float uH;
+uniform float uR0x; uniform float uR0y; uniform float uR0a; uniform float uR0t;
+uniform float uR1x; uniform float uR1y; uniform float uR1a; uniform float uR1t;
+uniform float uR2x; uniform float uR2y; uniform float uR2a; uniform float uR2t;
+uniform float uR3x; uniform float uR3y; uniform float uR3a; uniform float uR3t;
+
+float bump(vec2 p, float rx, float ry, float amp, float age) {
+    float off = length(p - vec2(rx, ry)) - age * 230.0;
+    return amp * exp(-off * off / 700.0) * exp(-age * 0.9);
+}
+
+float height(vec2 p) {
+    float v = sin(p.x * 0.0125 + uSx + uT * 0.10) * cos(p.y * 0.0165 - uSy + uT * 0.08)
+        + 0.6 * sin((p.x + p.y) * 0.0085 + uSx * 0.7 - uT * 0.06)
+        + 0.4 * sin(p.x * 0.03 - p.y * 0.026 + uSy + uT * 0.12);
+    v *= uCalm;
+    v += bump(p, uR0x, uR0y, uR0a, uR0t) + bump(p, uR1x, uR1y, uR1a, uR1t)
+       + bump(p, uR2x, uR2y, uR2a, uR2t) + bump(p, uR3x, uR3y, uR3a, uR3t);
+    return v;
+}
+
+void main() {
+    vec2 uv = cogl_tex_coord_in[0].xy;
+    vec2 p = vec2(uv.x * uW, uv.y * uH);
+    float h = height(p);
+    float k = (h + 1.8) / 0.3;                 // level units: whole numbers are contour lines
+    float n = floor(k + 0.5);
+    vec2 g = vec2(height(p + vec2(1.0, 0.0)) - h, height(p + vec2(0.0, 1.0)) - h) / 0.3;
+    float distPx = abs(k - n) / max(length(g), 0.0001);
+    float major = (mod(n, 4.0) < 0.5) ? 1.0 : 0.0;
+    float half_ = mix(0.5, 0.9, major);        // line half width in px, like the cairo version
+    float a = clamp(half_ + 0.5 - distPx, 0.0, 1.0) * step(-0.5, n) * step(n, 12.5);
+    vec3 ground = vec3(0.7843, 0.8784, 0.8471);
+    vec3 line = mix(vec3(0.6118, 0.7765, 0.7333), vec3(0.4353, 0.6510, 0.5961), major);
+    cogl_color_out = vec4(mix(ground, line, a), 1.0);
+}
+`;
+
+const TerrainEffect = GObject.registerClass(class IsobarTerrainEffect extends Clutter.ShaderEffect {
+    _init() {
+        super._init({shader_type: Clutter.ShaderType.FRAGMENT_SHADER});
+        this.set_shader_source(FRAGMENT);
+    }
+
+    // a whole-number JS value would be handed to the shader as an int, so nudge it
+    set(name, v) {
+        this.set_uniform_value(name, Number.isInteger(v) ? v + 1e-6 : v);
+    }
+});
+
+class BaseLayer {
     constructor(monitor) {
         this.monitor = monitor;
+        this.costs = new Float32Array(WINDOW);
+        this.computeCosts = new Float32Array(WINDOW);
+        this.paintCosts = new Float32Array(WINDOW);
+        this.frames = 0;
+    }
+
+    record(computeMs, paintMs) {
+        const i = this.frames % WINDOW;
+        this.costs[i] = computeMs + paintMs;
+        this.computeCosts[i] = computeMs;
+        this.paintCosts[i] = paintMs;
+        this.frames++;
+    }
+
+    local(ripples) {
+        return ripples.map(r => ({...r, x: r.x - this.monitor.x, y: r.y - this.monitor.y}));
+    }
+
+    destroy() {
+        this.actor.destroy();
+    }
+}
+
+// CPU renderer: marching squares into a cairo surface the size of the monitor.
+class CairoLayer extends BaseLayer {
+    constructor(monitor) {
+        super(monitor);
         this.cols = Math.ceil(monitor.width / CS) + 1;
         this.rows = Math.ceil(monitor.height / CS) + 1;
         this.field = new Float32Array((this.cols + 1) * (this.rows + 1));
@@ -29,18 +115,11 @@ class Layer {
         });
         this.actor.connect('repaint', area => this._paint(area));
         this.computeMs = 0;
-        this.costs = new Float32Array(WINDOW);
-        this.computeCosts = new Float32Array(WINDOW);
-        this.paintCosts = new Float32Array(WINDOW);
-        this.frames = 0;
     }
 
     update(state) {
         const t0 = now();
-        const {x, y} = this.monitor;
-        sampleField(this.field, this.cols, this.rows, CS, {
-            ...state, ripples: state.ripples.map(r => ({...r, x: r.x - x, y: r.y - y})),
-        });
+        sampleField(this.field, this.cols, this.rows, CS, {...state, ripples: this.local(state.ripples)});
         this.computeMs = now() - t0;
         this.actor.queue_repaint();
     }
@@ -67,22 +146,54 @@ class Layer {
             cr.stroke();
         }
         cr.$dispose();
-        const paintMs = now() - t0;
-        this.costs[this.frames % WINDOW] = this.computeMs + paintMs;
-        this.computeCosts[this.frames % WINDOW] = this.computeMs;
-        this.paintCosts[this.frames % WINDOW] = paintMs;
-        this.frames++;
-    }
-
-    destroy() {
-        this.actor.destroy();
+        this.record(this.computeMs, now() - t0);
     }
 }
 
+// GPU renderer: a fragment shader draws the lines, JS only passes a handful of numbers per frame.
+class ShaderLayer extends BaseLayer {
+    constructor(monitor) {
+        super(monitor);
+        this.actor = new St.Widget({
+            style_class: 'isobar-terrain', reactive: false,
+            x: monitor.x, y: monitor.y, width: monitor.width, height: monitor.height,
+            style: 'background-color: #C8E0D8;',
+        });
+        this.effect = new TerrainEffect();
+        this.actor.add_effect_with_name('isobar-terrain', this.effect);
+        this.effect.set('uW', monitor.width);
+        this.effect.set('uH', monitor.height);
+    }
+
+    update(state) {
+        const t0 = now();
+        const fx = this.effect;
+        fx.set('uT', state.now / 1000);
+        fx.set('uSx', state.seed[0]);
+        fx.set('uSy', state.seed[1]);
+        fx.set('uCalm', state.calm);
+        const ripples = this.local(state.ripples).slice(-MAX_RIPPLES);
+        for (let i = 0; i < MAX_RIPPLES; i++) {
+            const r = ripples[i];
+            fx.set(`uR${i}x`, r ? r.x : 0);
+            fx.set(`uR${i}y`, r ? r.y : 0);
+            fx.set(`uR${i}a`, r ? r.amp : 0);
+            fx.set(`uR${i}t`, r ? (state.now - r.t0) / 1000 : 0);
+        }
+        fx.queue_repaint();
+        this.record(now() - t0, 0);
+    }
+}
+
+const RENDERERS = {cairo: CairoLayer, shader: ShaderLayer, none: null};
+
 export class Terrain {
-    constructor() {
+    constructor(renderer = 'shader') {
+        this.renderer = renderer;
         this.layers = [];
         this._ripples = [];
+        this._t0 = now();
+        this._pausedAt = null;
         this._seed = [...SEEDS[0]];
         this._seedTarget = SEEDS[0];
         this._calm = 1;
@@ -95,8 +206,16 @@ export class Terrain {
         });
     }
 
+    get seed() {
+        return [...this._seed];
+    }
+
+    get calm() {
+        return this._calm;
+    }
+
     ripple(x, y, amp) {
-        this._ripples.push({x, y, amp, t0: now()});
+        this._ripples.push({x, y, amp, t0: this._time()});
     }
 
     setWorkspace(index) {
@@ -107,19 +226,37 @@ export class Terrain {
         this._calmTarget = calm ? 0.3 : 1;
     }
 
+    setRenderer(renderer) {
+        this.renderer = renderer;
+        this._build();
+    }
+
+    /** Freeze at a given moment (ms since start), settled on the current workspace. */
+    pause(at) {
+        this._pausedAt = at;
+        this._seed = [...this._seedTarget];
+        this._calm = this._calmTarget;
+        this._ripples = [];
+    }
+
+    resume() {
+        this._pausedAt = null;
+    }
+
     stats() {
         const layer = this.layers[0];
         const n = Math.min(layer?.frames ?? 0, WINDOW);
         if (!n)
             return {frames: 0, avgMs: 0, p95Ms: 0, maxMs: 0, computeAvgMs: 0, paintAvgMs: 0};
-        const costs = Array.from(layer.costs.slice(0, n)).sort((a, b) => a - b);
+        const mean = a => Array.from(a.slice(0, n)).reduce((x, y) => x + y, 0) / n;
+        const sorted = Array.from(layer.costs.slice(0, n)).sort((a, b) => a - b);
         return {
             frames: layer.frames,
-            avgMs: costs.reduce((a, b) => a + b, 0) / n,
-            p95Ms: costs[Math.min(n - 1, Math.floor(n * 0.95))],
-            maxMs: costs[n - 1],
-            computeAvgMs: Array.from(layer.computeCosts.slice(0, n)).reduce((a, b) => a + b, 0) / n,
-            paintAvgMs: Array.from(layer.paintCosts.slice(0, n)).reduce((a, b) => a + b, 0) / n,
+            avgMs: mean(layer.costs),
+            p95Ms: sorted[Math.min(n - 1, Math.floor(n * 0.95))],
+            maxMs: sorted[n - 1],
+            computeAvgMs: mean(layer.computeCosts),
+            paintAvgMs: mean(layer.paintCosts),
         };
     }
 
@@ -130,20 +267,27 @@ export class Terrain {
         this.layers = [];
     }
 
+    _time() {
+        return this._pausedAt ?? now() - this._t0;
+    }
+
     _build() {
         this.layers.forEach(l => l.destroy());
-        this.layers = Main.layoutManager.monitors.map(monitor => {
+        const Layer = RENDERERS[this.renderer];
+        this.layers = Layer ? Main.layoutManager.monitors.map(monitor => {
             const layer = new Layer(monitor);
             Main.layoutManager._backgroundGroup.add_child(layer.actor);
             return layer;
-        });
+        }) : [];
     }
 
     _tick() {
-        const t = now();
+        const t = this._time();
         this._ripples = this._ripples.filter(r => t - r.t0 < 3200);
-        this._seed = this._seed.map((v, i) => v + (this._seedTarget[i] - v) * 0.1);
-        this._calm += (this._calmTarget - this._calm) * 0.12;
+        if (this._pausedAt === null) {
+            this._seed = this._seed.map((v, i) => v + (this._seedTarget[i] - v) * 0.1);
+            this._calm += (this._calmTarget - this._calm) * 0.12;
+        }
         const state = {now: t, seed: this._seed, ripples: this._ripples, calm: this._calm};
         this.layers.forEach(layer => layer.update(state));
     }

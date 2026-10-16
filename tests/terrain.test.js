@@ -1,5 +1,5 @@
 import {test, eq, done} from './harness.js';
-import {contourSegments, sampleField} from '../lib/terrain.js';
+import {contourSegments, sampleField, levelBand, LEVELS} from '../lib/terrain.js';
 
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 
@@ -65,6 +65,15 @@ test('an old ripple has faded away', () => {
     const field = new Float32Array(4);
     sampleField(field, 1, 1, 115, {now: 10000, seed: [0, 0], ripples: [{x: 0, y: 0, amp: 2, t0: 0}], calm: 0});
     eq([...field].every(v => Math.abs(v) < 0.001), true);
+});
+
+test('there are 13 contour levels, evenly spaced from -1.8 to 1.8', () => {
+    eq(LEVELS.length, 13);
+    eq([LEVELS[0], LEVELS[12]].map(v => Math.round(v * 10) / 10), [-1.8, 1.8]);
+});
+
+test('a height falls in one band between two levels, clamped at both ends', () => {
+    eq([-5, -1.79, 0.01, 1.7, 5].map(levelBand), [-1, 0, 6, 11, 12]);
 });
 
 done();

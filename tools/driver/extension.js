@@ -123,6 +123,8 @@ export default class Driver extends Extension {
     }
 
     async _run() {
+        if (GLib.getenv('ISOBAR_BENCH'))
+            return this._bench();
         await sleep(4000);
         Main.overview.hide();
         await sleep(1200);
@@ -177,6 +179,7 @@ export default class Driver extends Extension {
         await sleep(800);
         const terrain = Main.extensionManager.lookup('isobar@gijs.dev')?.stateObj?._terrain;
         const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        expect('terrain renderer', terrain?.renderer ?? 'none', 'shader');
         expect('terrain layers (one per monitor)', String(terrain?.layers.length ?? 0), String(Main.layoutManager.monitors.length));
         const layer = terrain?.layers[0];
         expect('terrain sits in the background group', String(!!layer && Main.layoutManager._backgroundGroup.get_children().includes(layer.actor)), 'true');
@@ -190,6 +193,57 @@ export default class Driver extends Extension {
         log(`terrain cost per frame: avg ${s.avgMs.toFixed(2)} ms, p95 ${s.p95Ms.toFixed(2)} ms, max ${s.maxMs.toFixed(2)} ms over ${s.frames} frames (sampling ${s.computeAvgMs.toFixed(2)} ms, trace and draw ${s.paintAvgMs.toFixed(2)} ms)`);
         expect('terrain is ticking', String(s.frames > 20), 'true');
         expect('terrain frame cost under budget (avg < 10 ms)', String(s.avgMs < 10), 'true');
+
+        // freeze the terrain at a known moment so the screenshot can be compared with the JS maths
+        terrain.pause(123456);
+        await sleep(1200);
+        await screenshot('05-golden');
+        log(`golden: ${JSON.stringify({now: 123456, seed: terrain.seed, calm: terrain.calm, w: mon.width, h: mon.height})}`);
+        terrain.resume();
+    }
+
+    // Cost per renderer at the same redraw rate: nothing, cairo, shader.
+    async _bench() {
+        await sleep(4000);
+        Main.overview.hide();
+        await sleep(1500);
+        const terrain = Main.extensionManager.lookup('isobar@gijs.dev').stateObj._terrain;
+        // CPU time of the whole shell process (all threads). With software GL the shader runs here too.
+        const cpuTicks = () => {
+            const stat = new TextDecoder().decode(GLib.file_get_contents('/proc/self/stat')[1]);
+            const f = stat.slice(stat.lastIndexOf(')') + 2).split(' ');   // field 3 onwards
+            return Number(f[11]) + Number(f[12]);                         // utime + stime
+        };
+        const maps = new TextDecoder().decode(GLib.file_get_contents('/proc/self/maps')[1]);
+        log(`bench GL drivers loaded: ${['radeonsi', 'iris', 'nouveau', 'swrast', 'libLLVM', 'llvmpipe', 'zink'].filter(d => maps.includes(d)).join(', ') || 'none recognised'}`);
+        const pct = (a, p) => a.slice().sort((x, y) => x - y)[Math.min(a.length - 1, Math.floor(a.length * p))];
+        const avg = a => a.reduce((x, y) => x + y, 0) / (a.length || 1);
+        for (const renderer of ['none', 'cairo', 'shader']) {
+            terrain.setRenderer(renderer);
+            await sleep(1500);
+            const paints = [], stamps = [];
+            let started = null;
+            const b = global.stage.connect('before-paint', () => { started = GLib.get_monotonic_time(); });
+            const a = global.stage.connect('after-paint', () => {
+                if (started === null)
+                    return;
+                paints.push((GLib.get_monotonic_time() - started) / 1000);
+                stamps.push(GLib.get_monotonic_time() / 1000);
+                started = null;
+            });
+            // the baseline has no animation, so force the same redraw rate
+            const force = renderer === 'none' ? GLib.timeout_add(GLib.PRIORITY_DEFAULT, 33, () => { global.stage.queue_redraw(); return GLib.SOURCE_CONTINUE; }) : 0;
+            const cpu0 = cpuTicks();
+            await sleep(5000);
+            const cpu = (cpuTicks() - cpu0) / 100 / 5 * 100;   // % of one core
+            global.stage.disconnect(b);
+            global.stage.disconnect(a);
+            if (force)
+                GLib.source_remove(force);
+            const gaps = stamps.slice(1).map((s, i) => s - stamps[i]);
+            const js = terrain.stats();
+            log(`bench ${renderer}: paint avg ${avg(paints).toFixed(2)} ms, p95 ${pct(paints, 0.95).toFixed(2)} ms; ${(1000 / avg(gaps)).toFixed(1)} fps, gap p95 ${pct(gaps, 0.95).toFixed(1)} ms; extension JS avg ${js.avgMs.toFixed(2)} ms; shell CPU ${cpu.toFixed(0)}% of one core`);
+        }
     }
 
     // Isobar colours: ink menu, paper accent, no orange, and no second battery icon

@@ -6,7 +6,7 @@ import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {contourSegments, sampleField, LEVELS} from './lib/terrain.js';
+import {contourSegments, sampleField, idleEvery, LEVELS} from './lib/terrain.js';
 
 const CS = 11;            // cairo grid cell in px
 const FRAME_MS = 33;      // ~30 fps
@@ -16,7 +16,6 @@ const MAJOR = [0x6F, 0xA6, 0x98].map(v => v / 255);
 const SEEDS = [[0, 0], [2.3, 1.1], [4.1, 3.7], [1.2, 5.4]];
 const WINDOW = 120;       // frames kept for the cost statistics
 const MAX_RIPPLES = 4;    // the shader takes four at a time
-const IDLE_EVERY = 3;     // with nothing moving, redraw on every third tick: ~10 fps
 const COVER_EVERY = 15;   // look for covering windows twice a second
 
 const now = () => GLib.get_monotonic_time() / 1000;
@@ -201,6 +200,7 @@ export class Terrain {
         this._pausedAt = null;
         this._ticks = 0;
         this._refresh = true;
+        this._idleEvery = idleEvery(10);
         this._seed = [...SEEDS[0]];
         this._seedTarget = SEEDS[0];
         this._calm = 1;
@@ -229,6 +229,11 @@ export class Terrain {
         this._seedTarget = SEEDS[index % SEEDS.length];
         if (immediately)
             this._seed = [...this._seedTarget];
+    }
+
+    /** Redraws per second while nothing moves; 0 keeps the terrain still until something happens. */
+    setIdleFps(fps) {
+        this._idleEvery = idleEvery(fps);
     }
 
     setCalm(calm, immediately = false) {
@@ -318,7 +323,10 @@ export class Terrain {
         if (this._ticks % COVER_EVERY === 0)
             this._checkCovered();
         const t = this._time();
-        this._ripples = this._ripples.filter(r => t - r.t0 < 3200);
+        const alive = this._ripples.filter(r => t - r.t0 < 3200);
+        if (alive.length !== this._ripples.length)
+            this._refresh = true;           // one clean frame once a ripple is gone, or its ghost stays at 0 fps
+        this._ripples = alive;
         let easing = false;
         if (this._pausedAt === null) {
             this._seed = this._seed.map((v, i) => v + (this._seedTarget[i] - v) * 0.1);
@@ -328,7 +336,7 @@ export class Terrain {
         }
         // full speed only while something moves quickly: a ripple, an easing change, a fresh start
         const busy = easing || this._ripples.length > 0 || this._refresh;
-        if (!busy && this._ticks % IDLE_EVERY !== 0)
+        if (!busy && this._ticks % this._idleEvery !== 0)
             return;
         this._refresh = false;
         const state = {now: t, seed: this._seed, ripples: this._ripples, calm: this._calm};

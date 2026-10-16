@@ -40,6 +40,10 @@ export default class Isobar extends Extension {
 
         // Focus survives logging out and turning the extension off and on
         this._settings = this.getSettings();
+        this._terrain.setIdleFps(this._settings.get_int('idle-fps'));
+        this._idleFpsId = this._settings.connect('changed::idle-fps', () => {
+            this._terrain.setIdleFps(this._settings.get_int('idle-fps'));
+        });
         const focusOn = this._settings.get_boolean('focus');
         this._terrain.setCalm(focusOn, true);
         const focusToggle = new FocusToggle(focusOn, on => {
@@ -110,6 +114,8 @@ export default class Isobar extends Extension {
         Main.panel.statusArea.quickSettings.menu.disconnect(this._qsMenuId);
         if (this._focusId)
             this._settings.disconnect(this._focusId);
+        if (this._idleFpsId)
+            this._settings.disconnect(this._idleFpsId);
         this._focus?.quickSettingsItems.forEach(item => item.destroy());
         this._focus?.destroy();
         this._terrain?.destroy();
@@ -122,7 +128,7 @@ export default class Isobar extends Extension {
         this._pills?.destroy();
         this._meta?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._settings = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+        this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
     }
 
     _buildPills() {

@@ -179,6 +179,7 @@ export default class Driver extends Extension {
         await this._checkFocus();
         await this._checkPersistence();
         await this._checkEfficiency();
+        await this._checkIdleRates();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -324,6 +325,38 @@ export default class Driver extends Extension {
         await sleep(1500);
         expect('the terrain comes back when the window closes', String(layer().actor.visible), 'true');
         expect('and it draws again', String(await rate(1500) > 5), 'true');
+    }
+
+    // The idle-fps setting sets how often the terrain redraws at rest, and 0 means never
+    async _checkIdleRates() {
+        const ext = () => Main.extensionManager.lookup('isobar@gijs.dev').stateObj;
+        const settings = ext().getSettings();
+        const layer = () => ext()._terrain.layers[0];
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        const rate = async ms => {
+            const f0 = layer().frames;
+            await sleep(ms);
+            return (layer().frames - f0) / (ms / 1000);
+        };
+
+        await sleep(2500);
+        for (const [fps, lo, hi] of [[30, 24, 31], [10, 8, 12], [5, 3.5, 6.5], [2, 1, 3], [0, 0, 0.001]]) {
+            settings.set_int('idle-fps', fps);
+            await sleep(1200);
+            const measured = await rate(fps === 2 ? 5000 : 3000);
+            log(`idle-fps ${fps}: ${measured.toFixed(1)} redraws per second`);
+            expect(`idle-fps ${fps} redraws at about ${fps} per second`, String(measured >= lo && measured <= hi), 'true');
+        }
+
+        // at 0 a ripple still animates, and the terrain is still again afterwards
+        ext()._terrain.ripple(640, 400, 1.4);
+        const during = await rate(1500);
+        log(`idle-fps 0 with a ripple: ${during.toFixed(1)} redraws per second`);
+        expect('a ripple still animates at idle-fps 0', String(during > 20), 'true');
+        await sleep(3500);
+        expect('the terrain is still again after the ripple', String(await rate(1500)), '0');
+
+        settings.set_int('idle-fps', 10);
     }
 
     // Cost per renderer at the same redraw rate: nothing, cairo, shader.

@@ -1,5 +1,5 @@
 import {test, eq, done} from './harness.js';
-import {contourSegments, sampleField, levelBand, LEVELS} from '../lib/terrain.js';
+import {contourSegments, sampleField, levelBand, idleEvery, LEVELS} from '../lib/terrain.js';
 
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 
@@ -74,6 +74,14 @@ test('there are 13 contour levels, evenly spaced from -1.8 to 1.8', () => {
 
 test('a height falls in one band between two levels, clamped at both ends', () => {
     eq([-5, -1.79, 0.01, 1.7, 5].map(levelBand), [-1, 0, 6, 11, 12]);
+});
+
+test('redraws per second at rest become a tick interval', () => {
+    eq([30, 10, 5, 2, 1].map(idleEvery), [1, 3, 6, 15, 30]);
+});
+
+test('0 fps, or anything that is not a positive number, means never redraw at rest', () => {
+    eq([0, -4, NaN, undefined].every(fps => idleEvery(fps) === Infinity), true);
 });
 
 done();

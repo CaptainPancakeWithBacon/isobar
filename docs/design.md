@@ -51,6 +51,73 @@ Cairo's cost is mostly the full-monitor surface, not the number of lines: a 24 p
 
 What this does not show: GPU time. The paint stage timings only cover issuing draw calls, and the shell's GL driver could not be identified from inside the run (`libLLVM` is loaded, which software and some hardware drivers do). Check the real load on the laptop with a GPU monitor while the extension runs in the real session.
 
+### Real session, measured with `tools/measure.sh`
+
+On the laptop, on battery, `power-saver`, a maximized app window over the primary monitor the whole time, 120 s each:
+
+| Run | GPU busy | Battery | `gnome-shell` CPU |
+| --- | --- | --- | --- |
+| A, Isobar off | 9.1 % | 6.60 W | 20.6 % |
+| A2, Isobar off, after a fresh login | 12.4 % | 7.50 W | 21.7 % |
+| A3, Isobar off again | 12.8 % | 6.77 W | 21.8 % |
+| B, Isobar on, Focus off | 30.0 % | 7.67 W | 20.1 % |
+
+The baselines after the fresh login (A2, A3) agree within 0.4 points of GPU; A, taken before it, was lower. Battery power ranges from 6.60 to 7.50 W across the three baselines, so it is too noisy to read: B looks about 0.7 W higher, give or take half a watt. The GPU difference is not noise: the terrain costs about 17 points of GPU busy, and it does so while a maximized window hides it. Disabling the extension in the real session put the bar back (Activities visible again, no Isobar widgets, nothing in the shell log). The headless numbers above could not show this, because they only measured CPU. The shader needs to get cheaper, and it should stop drawing when it cannot be seen.
+
+### Making it cheaper
+
+Three changes after the real-session measurement above:
+
+- A layer hides itself, and its shader stops running, while a normal window covers the whole work area of its monitor (checked twice a second).
+- With nothing moving the terrain redraws at about 10 fps; it uses 30 fps while a ripple, a Focus change or a workspace change is running. The drift is about 8 px per second, so 10 fps looks smooth.
+- The shader evaluates the height once per pixel instead of three times, takes the line width from screen derivatives, and skips ripples that are not there.
+
+Checked in the headless shell: 10.0 fps idle, 30.0 fps with a ripple, zero frames while a maximized window covers the screen, a small window does not hide it, and the golden comparison still scores 0.999 and 0.998. Not yet measured in the real session: that needs a fresh login, because the shell keeps the old module code until then.
+
+Measured in the real session after a fresh login, 120 s each, on battery in `power-saver`:
+
+| Run | Situation | GPU busy | Battery | `gnome-shell` CPU |
+| --- | --- | --- | --- | --- |
+| A4 | app maximized, Isobar off | 12.2 % | 7.37 W | 20.1 % |
+| B2 | app maximized, Isobar on, terrain hidden | 12.3 % | 7.27 W | 21.0 % |
+| A5 | empty desktop, Isobar off | 0.9 % | 6.27 W | 1.6 % |
+| D | empty desktop, Isobar on, terrain visible at 10 fps | 10.2 % | 6.87 W | 6.3 % |
+
+Hidden, the terrain now costs nothing measurable (it cost 17 points of GPU before). Visible, it costs about 9 points of GPU, 5 points of CPU and 0.6 W; the battery figure is at the edge of the noise (about 0.5 W between runs). The cost is the compositor redrawing the whole screen, not the extension's JavaScript (0.15 ms per frame). With tiled windows and gaps the terrain is visible more often than on an empty desktop.
+
+### Redraw rate at rest (`idle-fps`)
+
+Empty desktop, fresh login, 120 s each, in this order, switching the setting live with `dconf write /org/gnome/shell/extensions/isobar/idle-fps N`:
+
+| Run | GPU busy | Battery | `gnome-shell` CPU | Battery, corrected for drift |
+| --- | --- | --- | --- | --- |
+| A6, Isobar off | 0.9 % | 6.14 W | 1.6 % | |
+| 10 fps | 10.3 % | 6.50 W | 6.5 % | about +0.4 W |
+| 5 fps | 6.1 % | 6.39 W | 4.4 % | about +0.4 W |
+| 2 fps | 3.3 % | 6.12 W | 3.2 % | about +0.15 W |
+| 0 fps | 0.9 % | 5.89 W | 2.4 % | about 0 |
+| A7, Isobar off | 1.0 % | 5.83 W | 1.5 % | |
+
+The baseline battery power drifted down over the 14 minutes (6.14 W to 5.83 W), which lines up with the order of the runs, so the raw battery column flatters the low rates. The corrected column subtracts a straight line between A6 and A7 and is good to roughly 0.2 W. GPU and CPU did not drift (0.9 to 1.0 %, 1.5 to 1.6 %) and are the reliable numbers.
+
+GPU cost is close to linear in the redraw rate, about 1 point per frame per second. At 0 fps it equals the baseline. CPU has a floor of about 0.8 points at 0 fps, probably the 30 Hz timer that keeps ticking while nothing is drawn; letting the timer sleep while idle would remove most of that. At 8 px of drift per second, 2 fps moves the lines in 4 px steps, 5 fps in 1.6 px steps.
+
+### Part of the visible cost is Blur my Shell
+
+On the same empty desktop at 10 fps, with only Blur my Shell's panel blur switched (`dconf write /org/gnome/shell/extensions/blur-my-shell/panel/blur false`, then `dconf reset`, which restored the key to unset):
+
+| Run | GPU busy | `gnome-shell` CPU |
+| --- | --- | --- |
+| Isobar off | 1.0 % | 1.7 % |
+| R1, Isobar on, panel blur on (the default) | 10.0 % | 6.5 % |
+| R2, Isobar on, panel blur off | 6.1 % | 4.3 % |
+
+R1 repeated the earlier 10 fps run (10.3 % and 6.5 %), so the numbers are steady. About 40 % of the added GPU and CPU is the panel blur: with `static-blur` off it samples what is behind the panel and blurs it again whenever that changes, and the terrain changes it every frame. The panel is an opaque ink strip, so nothing of the terrain behind it is ever seen. Starting the terrain below the panel should therefore take that cost away without touching anyone's settings. I tried it on the shader layer: the layer started below the panel (the panel box is 32 px high here) and the shader kept monitor coordinates through a `uTop` offset. In the headless shell the layer was 1280x768 at y=32 and the golden comparison still scored 0.999 and 0.998 (a wrong offset scored 0.36 and 0.34).
+
+**It did not help.** Measured in the real session on the empty desktop with the panel blur left on: 10 fps gives 10.3 % GPU and 6.5 % CPU (R3, before the change 10.0 % and 6.5 %), and 5 fps gives 6.1 % and 4.5 % (before: 6.1 % and 4.4 %). So the panel blur does not cost what it costs because the terrain sits behind the panel; switching it off still saves about 40 %, but the reason is something else, probably per-frame work its effect and repaint hack do whenever the stage redraws. Blur my Shell uses the shell's own `Shell.BlurEffect` in background mode for this. The change was reverted because it earned nothing.
+
+Found on the way: GNOME also disabled and re-enabled the test driver when the test switched Isobar off and on, so extensions listed after the toggled one may be cycled too. And after turning the extension back on the terrain started at the first workspace's landscape; it now starts at the current one.
+
 The shader and the JS maths agree: `tools/golden.js` compares a screenshot at a frozen moment with `sampleField` and needs recall and precision of 0.93; the shader scores 0.999 and 0.998, and a shifted constant scores 0.44 and 0.40.
 - Cost of redrawing contours in GJS on every frame. Measure it, and fall back to a lower frame rate if needed.
 

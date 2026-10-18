@@ -4,7 +4,7 @@ import Gio from 'gi://Gio';
 import GdkPixbuf from 'gi://GdkPixbuf';
 import System from 'system';
 
-import {sampleField, levelBand} from '../lib/terrain.js';
+import {sampleField, levelBand} from './reference-terrain.js';
 
 const dir = System.programArgs[0];
 const log = new TextDecoder().decode(Gio.File.new_for_path(`${dir}/driver.log`).load_contents(null)[1]);

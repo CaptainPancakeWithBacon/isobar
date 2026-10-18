@@ -223,7 +223,6 @@ export default class Driver extends Extension {
         await sleep(800);
         const terrain = Main.extensionManager.lookup('isobar@gijs.dev')?.stateObj?._terrain;
         const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
-        expect('terrain renderer', terrain?.renderer ?? 'none', 'shader');
         expect('terrain layers (one per monitor)', String(terrain?.layers.length ?? 0), String(Main.layoutManager.monitors.length));
         const layer = terrain?.layers[0];
         expect('terrain sits in the background group', String(!!layer && Main.layoutManager._backgroundGroup.get_children().includes(layer.actor)), 'true');
@@ -233,10 +232,9 @@ export default class Driver extends Extension {
             return;
         await screenshot('04-desktop');
         await sleep(3000);
-        const s = terrain.stats();
-        log(`terrain cost per frame: avg ${s.avgMs.toFixed(2)} ms, p95 ${s.p95Ms.toFixed(2)} ms, max ${s.maxMs.toFixed(2)} ms over ${s.frames} frames (sampling ${s.computeAvgMs.toFixed(2)} ms, trace and draw ${s.paintAvgMs.toFixed(2)} ms)`);
-        expect('terrain is ticking', String(s.frames > 20), 'true');
-        expect('terrain frame cost under budget (avg < 10 ms)', String(s.avgMs < 10), 'true');
+        const clock0 = terrain.clock;
+        await sleep(3000);
+        expect('terrain is ticking', String(terrain.clock > clock0), 'true');
 
         // freeze the terrain at a known moment so the screenshot can be compared with the JS maths
         terrain.pause(123456);
@@ -294,7 +292,9 @@ export default class Driver extends Extension {
         Main.extensionManager.enableExtension(uuid);
         await sleep(300);
         // 300 ms is too short for the terrain to ease down, so this only passes if it starts calm
-        expect('the terrain shows the current workspace after turning the extension back on', String(ext()._terrain._seedTarget[0] > 1), 'true');
+        // GNOME may have dropped an empty workspace by now, so compare with the workspace that is current, not with a fixed one
+        expect('the terrain shows the current workspace after turning the extension back on', String(ext()._terrain._seedTarget[0] > 1),
+            String(global.workspace_manager.get_active_workspace_index() % 4 !== 0));
         expect('the terrain starts calm after turning the extension back on', String(ext()._terrain.calm < 0.4), 'true');
         await this._click(meta());
         await sleep(800);
@@ -676,7 +676,7 @@ export default class Driver extends Extension {
         expect('and turning it on hides them again', String(tray._bannerBlocked), 'true');
     }
 
-    // Cost per renderer at the same redraw rate: nothing, cairo, shader.
+    // Cost at the same redraw rate: terrain hidden, terrain shown.
     async _bench() {
         await sleep(4000);
         Main.overview.hide();
@@ -692,8 +692,8 @@ export default class Driver extends Extension {
         log(`bench GL drivers loaded: ${['radeonsi', 'iris', 'nouveau', 'swrast', 'libLLVM', 'llvmpipe', 'zink'].filter(d => maps.includes(d)).join(', ') || 'none recognised'}`);
         const pct = (a, p) => a.slice().sort((x, y) => x - y)[Math.min(a.length - 1, Math.floor(a.length * p))];
         const avg = a => a.reduce((x, y) => x + y, 0) / (a.length || 1);
-        for (const renderer of ['none', 'cairo', 'shader']) {
-            terrain.setRenderer(renderer);
+        for (const renderer of ['none', 'shader']) {
+            terrain.layers.forEach(l => { l.actor.visible = renderer === 'shader'; });
             await sleep(1500);
             const paints = [], stamps = [];
             let started = null;
@@ -715,8 +715,7 @@ export default class Driver extends Extension {
             if (force)
                 GLib.source_remove(force);
             const gaps = stamps.slice(1).map((s, i) => s - stamps[i]);
-            const js = terrain.stats();
-            log(`bench ${renderer}: paint avg ${avg(paints).toFixed(2)} ms, p95 ${pct(paints, 0.95).toFixed(2)} ms; ${(1000 / avg(gaps)).toFixed(1)} fps, gap p95 ${pct(gaps, 0.95).toFixed(1)} ms; extension JS avg ${js.avgMs.toFixed(2)} ms; shell CPU ${cpu.toFixed(0)}% of one core`);
+            log(`bench ${renderer}: paint avg ${avg(paints).toFixed(2)} ms, p95 ${pct(paints, 0.95).toFixed(2)} ms; ${(1000 / avg(gaps)).toFixed(1)} fps, gap p95 ${pct(gaps, 0.95).toFixed(1)} ms; shell CPU ${cpu.toFixed(0)}% of one core`);
         }
     }
 

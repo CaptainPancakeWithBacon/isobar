@@ -25,7 +25,7 @@ An early, personal project. Be careful with it.
 
 - Written for **GNOME Shell 46** and tested on Ubuntu 24.04 on **Wayland**, by automated checks in a headless shell and by hand on one laptop with one monitor.
 - **Not tested:** X11, other GNOME versions, several monitors (a layer is made per monitor, but that has not been looked at), windows with transparency, and the lock screen.
-- Light colours only. The overview, the dock and notifications are not restyled.
+- Light colours only. The overview, the dock and the message list are not restyled; notifications show on the island instead of as banners.
 - Not on extensions.gnome.org.
 - **It costs GPU while the terrain is visible.** On one AMD laptop, on battery in `power-saver`, an empty desktop at 10 fps used about 9 points more GPU, 4 to 5 points more CPU and roughly 0.6 W more than without Isobar. At 0 fps and while a window covers the screen the difference was not measurable. Blur my Shell's panel blur accounts for about 40 % of the visible cost if you use it. The numbers, and what did not help, are in [`docs/design.md`](docs/design.md).
 
@@ -106,6 +106,10 @@ Unit tests for the plain logic run under `gjs`:
 ```bash
 gjs -m tests/bar.test.js
 gjs -m tests/terrain.test.js
+gjs -m tests/island.test.js
+gjs -m tests/notifications.test.js
+gjs -m tests/music.test.js
+python3 hooks/test_relay.py
 ```
 
 The shell itself is tested in a throwaway GNOME Shell that touches nothing of your session. A test-only extension in `tools/driver/` clicks through the bar, checks colours, the pill animation, the Focus setting, the redraw rate and the pausing under windows, and takes screenshots; two scripts then check the screenshots (no orange left in the menu, and the terrain on screen against the tested maths).
@@ -116,6 +120,8 @@ ISOBAR_HEADLESS=1 ISOBAR_DRIVER_OUT=/tmp/isobar-run tools/nested.sh --drive
 ```
 
 It needs `gnome-shell` 46, `gjs`, GTK 4, Python 3 with Pillow, and takes about two minutes. Without `ISOBAR_HEADLESS` it opens a nested window instead, but then your own mouse can disturb the clicks. `tools/measure.sh` averages GPU use, battery power and shell CPU over a number of seconds, and changes nothing.
+
+`tools/pack.sh` builds the zip for extensions.gnome.org and checks what is in it; what is left before a release is in [`docs/releasing.md`](docs/releasing.md).
 
 ## Prototype
 

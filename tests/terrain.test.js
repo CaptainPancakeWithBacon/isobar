@@ -1,5 +1,6 @@
 import {test, eq, done} from './harness.js';
-import {contourSegments, sampleField, levelBand, idleInterval, clockStep, LEVELS} from '../lib/terrain.js';
+import {idleInterval, clockStep} from '../lib/terrain.js';
+import {contourSegments, sampleField, levelBand, LEVELS} from '../tools/reference-terrain.js';
 
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 

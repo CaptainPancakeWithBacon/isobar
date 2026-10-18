@@ -61,7 +61,7 @@ Two renderers share the maths in `lib/terrain.js`. Same machine, 1280x800, redra
 | Renderer | Extension JS per frame | Shell CPU, headless | Shell CPU, nested |
 | --- | --- | --- | --- |
 | none (forced redraws) | 0 ms | 4% of a core | 6% |
-| cairo (`St.DrawingArea`) | 25 ms | 81% | 54% |
+| cairo (`St.DrawingArea`) | 25 ms | 81% | 54% |  <!-- measured once; the cairo renderer is no longer in the code -->
 | shader (`Clutter.ShaderEffect`) | 0.16 ms | 4% | 5% |
 
 Cairo's cost is mostly the full-monitor surface, not the number of lines: a 24 px grid with 9 levels still took 15.7 ms. The shader is the default.

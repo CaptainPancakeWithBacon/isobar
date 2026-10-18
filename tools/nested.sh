@@ -4,12 +4,14 @@
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-glib-compile-schemas "$ROOT/schemas"
+# ISOBAR_EXT_DIR: run the extension from somewhere else, e.g. an unpacked zip, instead of this checkout
+EXT_DIR=${ISOBAR_EXT_DIR:-$ROOT}
+glib-compile-schemas "$EXT_DIR/schemas"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 mkdir -p "$TMP/data/gnome-shell/extensions" "$TMP/config"
-ln -s "$ROOT" "$TMP/data/gnome-shell/extensions/isobar@gijs.dev"
+ln -s "$EXT_DIR" "$TMP/data/gnome-shell/extensions/isobar@gijs.dev"
 ln -s "$ROOT/tools/driver" "$TMP/data/gnome-shell/extensions/isobar-driver@gijs.dev"
 export XDG_DATA_HOME="$TMP/data" XDG_CONFIG_HOME="$TMP/config" ROOT
 

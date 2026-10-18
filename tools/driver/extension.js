@@ -140,6 +140,12 @@ export default class Driver extends Extension {
             await sleep(1200);
             return this._checkNotifications();
         }
+        if (GLib.getenv('ISOBAR_ONLY') === 'demo') {
+            await sleep(5000);
+            Main.overview.hide();
+            await sleep(1200);
+            return this._demo();
+        }
         if (GLib.getenv('ISOBAR_ONLY') === 'palette') {
             await sleep(5000);
             Main.overview.hide();
@@ -533,6 +539,42 @@ export default class Driver extends Extension {
         Main.extensionManager.enableExtension(uuid);
         await sleep(1500);
         expect('a song while Isobar is off is not heard, and nothing breaks', String(isl().shown), 'null');
+    }
+
+    // Frames for the animations in the README. Each frame is stamped with its time, so tools/make_gifs.py can play them at the real speed.
+    async _demo() {
+        const uuid = 'isobar@gijs.dev';
+        const ext = () => Main.extensionManager.lookup(uuid).stateObj;
+        const t0 = GLib.get_monotonic_time() / 1000;
+        const stamps = {};
+        const capture = async (clip, label) => {
+            const list = stamps[clip] ??= [];
+            const name = `demo-${clip}-${String(list.length).padStart(3, '0')}`;
+            await screenshot(name);
+            list.push([name, Math.round(GLib.get_monotonic_time() / 1000 - t0), label ?? '']);
+        };
+        const record = async (clip, ms) => {
+            const end = GLib.get_monotonic_time() / 1000 + ms;
+            while (GLib.get_monotonic_time() / 1000 < end)
+                await capture(clip);
+        };
+        // the island: a notification, then an agent that needs you, each with its ripple
+        ext()._settings.set_string('palette', 'mint');
+        await sleep(600);
+        await record('island', 700);
+        await this._gdbus('Show', 'New message', 'Mail · From Anna', 'info', 3);
+        await record('island', 4700);
+        await this._gdbus('Show', 'Claude needs you', 'isobar', 'needs', 3);
+        await record('island', 4700);
+        // the palettes, one still each
+        for (const name of ['mint', 'sand', 'sky', 'blush', 'stone']) {
+            ext()._settings.set_string('palette', name);
+            await sleep(700);
+            await capture('palettes', name);
+        }
+        ext()._settings.set_string('palette', 'mint');
+        GLib.file_set_contents(`${OUT}/demo-frames.json`, JSON.stringify(stamps));
+        log('ok   demo frames written');
     }
 
     // Every palette: the bar, the island and the terrain take its colours, and switching back and forth leaves nothing behind

@@ -5,19 +5,33 @@
   </picture>
 </p>
 
-A quiet, light GNOME Shell extension. The desktop is a living contour map, the top bar is a thin ink strip, and quick settings follow the same two colours.
+A quiet, light GNOME Shell extension. The desktop is a living contour map, the top bar is a thin ink strip, and a small pill under the bar opens for what matters: a notification, a song, an AI agent that needs you.
 
-![The Isobar bar and the contour terrain on an empty desktop](docs/screenshots/desktop.png)
+<p align="center">
+  <img alt="The island opens for a notification, then for an agent that needs you, and the terrain ripples from it" src="docs/media/island.gif" width="640">
+</p>
 
-## What it does
+## Features
 
-- **A contour desktop.** A fragment shader draws contour lines as the desktop background, behind your windows. The terrain drifts slowly and ripples when you switch workspace or open quick settings.
-- **A different bar.** Workspace pills on the left (the current one is long), and the date and battery as one button that opens quick settings. The Activities button, the date menu and the system battery icon are hidden.
-- **Quick settings in ink and paper.** Same menu, new colours, white instead of orange as the accent.
-- **Focus.** A toggle in quick settings. While it is on, the terrain calms down to a third of its strength; ripples still show. It remembers its state across logins.
-- **Cheap when you are not looking.** The terrain hides itself while a window covers the whole work area of a monitor, redraws at `idle-fps` (10 by default) when nothing moves, and stops its timer entirely at 0.
+- **The island.** A white pill under the bar. It opens for events, sends a ripple through the terrain (bigger for what matters more), and closes again. Rest the pointer on it to keep it open, click it to dismiss.
+- **Notifications on the island.** App notifications show there instead of as GNOME's banner, and stay in the message list. A privacy toggle decides how much shows: everything, the title only, or just the app name.
+- **Music.** When a media player starts a new song, the island shows the title and artist.
+- **AI agents.** Claude Code, OpenCode and Copilot CLI can tell the island when they are done or need you, through a small relay. [Details below.](#ai-agent-hooks)
+- **A contour desktop.** A shader draws contour lines behind your windows. The terrain drifts slowly, ripples when you switch workspace or open quick settings, and calms down in Focus mode.
+- **Five light palettes.** Mint, sand, sky, blush and stone change the terrain, bar, menus and island together.
+- **A different bar.** Workspace pills on the left (the current one is long), date and battery as one button that opens quick settings.
+- **Quick settings in ink and paper**, with Focus, Privacy and Palette toggles.
+- **Cheap when you are not looking.** The terrain hides while a window covers the screen and can be set to redraw rarely, or never, at rest.
 
-![The terrain with Focus off, then with Focus on](docs/screenshots/focus.png)
+<p align="center">
+  <img alt="The five palettes: mint, sand, sky, blush, stone" src="docs/media/palettes.gif" width="640">
+</p>
+
+<p align="center">
+  <img alt="The Palette menu open in quick settings" src="docs/screenshots/palette-menu.png" width="360">
+  &nbsp;
+  <img alt="The terrain with Focus off, then with Focus on" src="docs/screenshots/focus.png" width="420">
+</p>
 
 ## Status
 
@@ -123,6 +137,8 @@ ISOBAR_HEADLESS=1 ISOBAR_DRIVER_OUT=/tmp/isobar-run tools/nested.sh --drive
 ```
 
 It needs `gnome-shell` 46, `gjs`, GTK 4, Python 3 with Pillow, and takes about two minutes. Without `ISOBAR_HEADLESS` it opens a nested window instead, but then your own mouse can disturb the clicks. `tools/measure.sh` averages GPU use, battery power and shell CPU over a number of seconds, and changes nothing.
+
+The animations in this README are made from real frames of the test shell: run the driver with `ISOBAR_ONLY=demo`, then `python3 tools/make_gifs.py <output dir> docs/media`.
 
 `tools/pack.sh` builds the zip for extensions.gnome.org and checks what is in it; what is left before a release is in [`docs/releasing.md`](docs/releasing.md).
 

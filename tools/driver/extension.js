@@ -140,6 +140,14 @@ export default class Driver extends Extension {
             await sleep(1200);
             return this._checkNotifications();
         }
+        if (GLib.getenv('ISOBAR_ONLY') === 'coucou') {
+            while (Main.layoutManager._startingUp)
+                await sleep(500);
+            await sleep(3000);
+            Main.overview.hide();
+            await sleep(1200);
+            return this._checkCoucou();
+        }
         if (GLib.getenv('ISOBAR_ONLY') === 'demo') {
             await sleep(5000);
             Main.overview.hide();
@@ -228,6 +236,7 @@ export default class Driver extends Extension {
         await this._checkIslandPointer();
         await this._checkAgents();
         await this._checkPalette();
+        await this._checkCoucou();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -254,6 +263,16 @@ export default class Driver extends Extension {
         await sleep(1200);
         await screenshot('05-golden');
         log(`golden: ${JSON.stringify({now: 123456, seed: terrain.seed, calm: terrain.calm, w: mon.width, h: mon.height})}`);
+        // the same frozen moment with a summit, so the shader's summit is held against the JS maths too
+        const peak = {x: 640, y: 380, amp: 1.6};
+        terrain._peak = {...peak};
+        terrain._peakTarget = {x: peak.x, y: peak.y};
+        terrain._wake();
+        await sleep(1200);
+        await screenshot('05b-golden-peak');
+        log(`golden-peak: ${JSON.stringify({now: 123456, seed: terrain.seed, calm: terrain.calm, w: mon.width, h: mon.height, peak})}`);
+        terrain._peak = null;
+        terrain._peakTarget = null;
         terrain.resume();
     }
 
@@ -559,6 +578,59 @@ export default class Driver extends Extension {
         Main.extensionManager.enableExtension(uuid);
         await sleep(1500);
         expect('a song while Isobar is off is not heard, and nothing breaks', String(isl().shown), 'null');
+    }
+
+    // Coucou's island window appears: a summit builds under it and Isobar's own island steps aside; it closes: all comes back
+    async _checkCoucou() {
+        const uuid = 'isobar@gijs.dev';
+        const ext = () => Main.extensionManager.lookup(uuid).stateObj;
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        const mon = Main.layoutManager.primaryMonitor;
+        const fake = () => global.display.list_all_windows().find(w => w.get_title() === 'isobar-fake-coucou');
+        const proc = Gio.Subprocess.new(['gjs', '-m', `${this.path}/window.js`, 'small', 'coucou'], Gio.SubprocessFlags.NONE);
+        let win = null;
+        for (let i = 0; i < 160 && !(win = fake()); i++)
+            await sleep(250);
+        expect('a window of class coucou exists', String(!!win), 'true');
+        if (!win) {
+            proc.force_exit();
+            return;
+        }
+        const width = 280, height = 120;   // the real one is 720x320; a smaller one keeps the test shell tidy
+        win.move_resize_frame(false, mon.x + Math.round((mon.width - width) / 2), mon.y + 28, width, height);
+        await sleep(1800);
+        const peakAt = ext()._terrain._peakTarget;
+        const frame = win.get_frame_rect();   // where the window really is, whatever the shell made of the request
+        expect('a summit is placed under the middle of the window, below the bar', `${Math.round(peakAt?.x)},${Math.round(peakAt?.y)}`,
+            `${Math.round(frame.x + frame.width / 2)},${Math.max(frame.y, Math.round(Main.layoutManager.panelBox.height)) + 24}`);
+        expect('it has grown by now', String(ext()._terrain._peak?.amp > 1.4), 'true');
+        expect('Isobar\'s own island is hidden', String(ext()._island.actor.visible), 'false');
+        expect('notifications are left to Coucou: no banner blocking', String(Main.messageTray._bannerBlocked), 'false');
+        expect('and the music listener is off', String(ext()._music), 'null');
+        await screenshot('11-coucou-summit');
+
+        await this._gdbus('Show', 'Build finished', '', 'done', 3);
+        await sleep(500);
+        expect('an event does not open the hidden island', String(ext()._island.shown), 'null');
+        const ripple = ext()._terrain._ripples.at(-1);
+        expect('but the terrain ripples from the summit', `${Math.round(ripple?.x)},${ripple?.amp}`, `${Math.round(peakAt.x)},1.6`);
+
+        ext()._settings.set_boolean('coucou-aware', false);
+        await sleep(600);
+        expect('with coucou-aware off the summit goes', String(ext()._terrain._peakTarget), 'null');
+        expect('and the island is back', String(ext()._island.actor.visible), 'true');
+        ext()._settings.set_boolean('coucou-aware', true);
+        await sleep(800);
+        expect('with it on again the summit returns', String(!!ext()._terrain._peakTarget), 'true');
+
+        proc.force_exit();
+        await sleep(1500);
+        expect('when Coucou closes the summit goes', String(ext()._terrain._peakTarget), 'null');
+        expect('the island is back', String(ext()._island.actor.visible), 'true');
+        expect('and notifications are Isobar\'s again', String(Main.messageTray._bannerBlocked), 'true');
+        expect('and so is the music listener', String(!!ext()._music), 'true');
+        await sleep(2500);
+        expect('the summit has sunk away', String(ext()._terrain._peak), 'null');
     }
 
     // Frames for the animations in the README. Each frame is stamped with its time, so tools/make_gifs.py can play them at the real speed.

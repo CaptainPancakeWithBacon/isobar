@@ -35,6 +35,7 @@ export class Island {
         this._id = 0;
         this._timer = 0;
         this._shown = null;
+        this._asideAt = null;
 
         this._title = new St.Label({style_class: 'isobar-island-title', opacity: 0});
         this._sub = new St.Label({style_class: 'isobar-island-sub', opacity: 0});
@@ -82,6 +83,12 @@ export class Island {
     /** D-Bus: org.gnome.Shell.Extensions.Isobar.Show(title, subtitle, kind, seconds) -> id */
     Show(title, subtitle, kind, seconds) {
         const id = ++this._id;
+        if (this._asideAt) {
+            // Coucou is on screen: its island shows things, ours only lets the terrain ripple from under it
+            const {ripple} = view(push({current: null, queue: []}, normalizeEvent({title, subtitle, kind, seconds}, id, nowMs()), nowMs()));
+            this._terrain.ripple(this._asideAt.x, this._asideAt.y, ripple);
+            return id;
+        }
         this._state = push(this._state, normalizeEvent({title, subtitle, kind, seconds}, id, nowMs()), nowMs());
         this._sync();
         return id;
@@ -104,6 +111,16 @@ export class Island {
     _pointer(state) {
         this._state = state;
         this._sync();
+    }
+
+    /** Step aside for Coucou, whose summit is at `at` ({x, y}), or come back with null. */
+    setStepAside(at) {
+        this._asideAt = at;
+        this.actor.visible = !at;
+        if (at) {
+            this._state = {current: null, queue: []};
+            this._sync();
+        }
     }
 
     destroy() {

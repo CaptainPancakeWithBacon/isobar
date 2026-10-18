@@ -161,3 +161,13 @@ The shader and the JS maths agree: `tools/golden.js` compares a screenshot at a 
 Tests first. Pure logic (the contour tracing, token handling) lives in plain modules that run under `gjs` without the shell: `gjs -m tests/bar.test.js`.
 
 The shell wiring is tested in a throwaway GNOME Shell with `tools/nested.sh --drive`. A test-only extension (`tools/driver/`) clicks through the bar with a virtual pointer, checks theme colours and the pill animation, and takes screenshots; `tools/no_orange.py` then checks the real pixels of the quick settings menu. Set `ISOBAR_HEADLESS=1` to run without a window, which is the reliable way: in a nested window your own mouse and keyboard can disturb the clicks. Set `ISOBAR_DRIVER_OUT=<dir>` for the log and screenshots.
+
+## Coucou
+
+Coucou (a separate app, see the README) is the character; Isobar is the room around it. `coucou.js` watches the windows for Coucou's island window (class contains `coucou`, at the top edge of a monitor, narrower than 1000 px; its settings window is neither). While it is there:
+
+- the terrain gets a summit under the middle of that window: a hill of 1.6 contour units, sigma 150 px, that rises and sinks with an ease. It is in the shader, in `tools/reference-terrain.js`, and the golden check compares a frozen frame with a summit against the JS maths;
+- Isobar's own island hides, notifications and the music listener are switched off (Coucou has its own), and `Show` events only ripple the terrain from the summit;
+- the setting `coucou-aware` (default on) turns all of this off.
+
+Not done: Coucou's window never changes size when its island opens (the webview animates inside a fixed transparent window), so Isobar cannot see Coucou "opening". For ripples when Coucou reacts, Coucou has to call `org.gnome.Shell.Extensions.Isobar.Show` itself, which works today and needs a small change on Coucou's side. Also untested: the real Coucou window (only a stand-in with a matching class has been used), Wayland versus XWayland differences in its class name, and several monitors.

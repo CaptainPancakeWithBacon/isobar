@@ -11,6 +11,7 @@ import {PALETTES, DEFAULT, rgb} from './lib/palettes.js';
 
 const SEEDS = [[0, 0], [2.3, 1.1], [4.1, 3.7], [1.2, 5.4]];
 const MAX_RIPPLES = 4;    // the shader takes four at a time
+const PEAK_AMP = 1.6;     // height of the summit under Coucou, in the terrain's own units
 const COVER_MS = 500;     // look for covering windows twice a second
 
 const now = () => GLib.get_monotonic_time() / 1000;
@@ -23,6 +24,7 @@ uniform float uSy;
 uniform float uCalm;
 uniform float uW;
 uniform float uH;
+uniform float uPx; uniform float uPy; uniform float uPa;   // the summit under Coucou
 uniform float uGr; uniform float uGg; uniform float uGb;   // ground
 uniform float uNr; uniform float uNg; uniform float uNb;   // minor lines
 uniform float uJr; uniform float uJg; uniform float uJb;   // major lines
@@ -45,6 +47,7 @@ float height(vec2 p) {
     if (uR1a != 0.0) v += bump(p, uR1x, uR1y, uR1a, uR1t);
     if (uR2a != 0.0) v += bump(p, uR2x, uR2y, uR2a, uR2t);
     if (uR3a != 0.0) v += bump(p, uR3x, uR3y, uR3a, uR3t);
+    if (uPa != 0.0) v += uPa * exp(-dot(p - vec2(uPx, uPy), p - vec2(uPx, uPy)) / 45000.0);
     return v;
 }
 
@@ -121,6 +124,10 @@ class ShaderLayer extends BaseLayer {
         fx.set('uSx', state.seed[0]);
         fx.set('uSy', state.seed[1]);
         fx.set('uCalm', state.calm);
+        const peak = state.peak ? this.local([state.peak])[0] : {x: 0, y: 0, amp: 0};
+        fx.set('uPx', peak.x);
+        fx.set('uPy', peak.y);
+        fx.set('uPa', peak.amp);
         const ripples = this.local(state.ripples).slice(-MAX_RIPPLES);
         for (let i = 0; i < MAX_RIPPLES; i++) {
             const r = ripples[i];
@@ -146,6 +153,8 @@ export class Terrain {
         this._seedTarget = SEEDS[0];
         this._calm = 1;
         this._calmTarget = 1;
+        this._peak = null;              // {x, y, amp} drawn now; amp eases toward the target
+        this._peakTarget = null;
         this._palette = PALETTES[DEFAULT];
         this._build();
         this._monitorsId = Main.layoutManager.connect('monitors-changed', () => this._build());
@@ -196,6 +205,14 @@ export class Terrain {
         this._calmTarget = calm ? 0.3 : 1;
         if (immediately)
             this._calm = this._calmTarget;
+        this._wake();
+    }
+
+    /** A summit at {x, y} (screen px), or null for none. It rises and sinks smoothly. */
+    setPeak(at) {
+        this._peakTarget = at;
+        if (at)
+            this._peak = {x: at.x, y: at.y, amp: this._peak?.amp ?? 0};
         this._wake();
     }
 
@@ -290,12 +307,19 @@ export class Terrain {
         if (this._pausedAt === null) {
             this._seed = this._seed.map((v, i) => v + (this._seedTarget[i] - v) * 0.1);
             this._calm += (this._calmTarget - this._calm) * 0.12;
+            const peakGoal = this._peakTarget ? PEAK_AMP : 0;
+            if (this._peak) {
+                this._peak.amp += (peakGoal - this._peak.amp) * 0.08;
+                if (!this._peakTarget && this._peak.amp < 0.01)
+                    this._peak = null;
+            }
             easing = Math.abs(this._calm - this._calmTarget) > 0.005 ||
-                this._seed.some((v, i) => Math.abs(v - this._seedTarget[i]) > 0.005);
+                this._seed.some((v, i) => Math.abs(v - this._seedTarget[i]) > 0.005) ||
+                (this._peak !== null && Math.abs(this._peak.amp - peakGoal) > 0.01);
         }
         const visible = this.layers.some(layer => !layer.covered);
         if (visible) {
-            const state = {now: t, seed: this._seed, ripples: this._ripples, calm: this._calm};
+            const state = {now: t, seed: this._seed, ripples: this._ripples, calm: this._calm, peak: this._peak};
             this.layers.forEach(layer => {
                 if (!layer.covered)
                     layer.update(state);

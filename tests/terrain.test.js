@@ -93,4 +93,31 @@ test('after a long sleep the animation clock carries on from where it stopped', 
     eq([1501, 10000, 600000].map(clockStep), [33, 33, 33]);
 });
 
+const field = (extra = {}) => {
+    const f = new Float32Array(41 * 41);
+    sampleField(f, 40, 40, 20, {now: 0, seed: [0, 0], ripples: [], calm: 1, ...extra});
+    return f;
+};
+const at = (f, x, y) => f[(y / 20) * 41 + x / 20];
+
+test('a summit raises the terrain under it by its height', () => {
+    const base = field(), peaked = field({peak: {x: 400, y: 400, amp: 1.6}});
+    eq(Math.abs(at(peaked, 400, 400) - at(base, 400, 400) - 1.6) < 1e-5, true);
+});
+
+test('a summit fades with distance and does not touch the far corners', () => {
+    const base = field(), peaked = field({peak: {x: 400, y: 400, amp: 1.6}});
+    eq(at(peaked, 0, 0) - at(base, 0, 0) < 0.01, true);   // 566 px away: well under a hundredth of a contour step
+    eq(at(peaked, 400, 500) - at(base, 400, 500) < 1.6, true);
+});
+
+test('a summit of height zero changes nothing', () => {
+    eq(Array.from(field({peak: {x: 400, y: 400, amp: 0}})), Array.from(field()));
+});
+
+test('Focus does not flatten the summit, as it does not flatten ripples', () => {
+    const calmBase = field({calm: 0.3}), calmPeaked = field({calm: 0.3, peak: {x: 400, y: 400, amp: 1.6}});
+    eq(Math.abs(at(calmPeaked, 400, 400) - at(calmBase, 400, 400) - 1.6) < 1e-5, true);
+});
+
 done();

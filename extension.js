@@ -14,6 +14,7 @@ import {Terrain} from './terrain-layer.js';
 import {Island} from './island.js';
 import {Notifications} from './notifications.js';
 import {Music} from './music.js';
+import {Coucou} from './coucou.js';
 import {nextPrivacy} from './lib/notifications.js';
 import {NAMES} from './lib/palettes.js';
 
@@ -93,10 +94,10 @@ export default class Isobar extends Extension {
         this._idleFpsId = this._settings.connect('changed::idle-fps', () => {
             this._terrain.setIdleFps(this._settings.get_int('idle-fps'));
         });
-        this._music = new Music(this._island);
         this._applyPalette();
         this._paletteId = this._settings.connect('changed::palette', () => this._applyPalette());
-        this._syncBanners();
+        this._syncCoucou();   // also starts notifications and music, unless Coucou is there
+        this._coucouId = this._settings.connect('changed::coucou-aware', () => this._syncCoucou());
         this._bannersId = this._settings.connect('changed::replace-banners', () => this._syncBanners());
         const focusOn = this._settings.get_boolean('focus');
         this._terrain.setCalm(focusOn, true);
@@ -174,7 +175,10 @@ export default class Isobar extends Extension {
             this._settings.disconnect(this._bannersId);
         if (this._paletteId)
             this._settings.disconnect(this._paletteId);
+        if (this._coucouId)
+            this._settings.disconnect(this._coucouId);
         this._unloadPalette();
+        this._coucou?.destroy();
         this._notifications?.destroy();
         this._music?.destroy();
         if (this._idleFpsId)
@@ -192,7 +196,7 @@ export default class Isobar extends Extension {
         this._pills?.destroy();
         this._meta?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._paletteId = this._paletteToggle = this._music = this._privacyToggle = this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+        this._coucou = this._coucouAt = this._coucouId = this._paletteId = this._paletteToggle = this._music = this._privacyToggle = this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
     }
 
     // The colours of the bar, menus and island come from palettes/<name>.css; the terrain takes them from the same data
@@ -212,9 +216,31 @@ export default class Isobar extends Extension {
         this._paletteFile = null;
     }
 
+    // Coucou on screen: a summit under it, our island steps aside, and notifications and music are Coucou's to show
+    _syncCoucou() {
+        this._coucou?.destroy();
+        this._coucou = null;
+        this._onCoucou(null);
+        if (this._settings.get_boolean('coucou-aware'))
+            this._coucou = new Coucou(at => this._onCoucou(at));
+    }
+
+    _onCoucou(at) {
+        this._coucouAt = at;
+        this._terrain.setPeak(at);
+        this._island.setStepAside(at);
+        this._syncBanners();
+        this._syncMusic();
+    }
+
+    _syncMusic() {
+        this._music?.destroy();
+        this._music = this._coucouAt ? null : new Music(this._island);
+    }
+
     _syncBanners() {
         this._notifications?.destroy();
-        this._notifications = this._settings.get_boolean('replace-banners') ? new Notifications(this._island, () => this._settings.get_string('privacy')) : null;
+        this._notifications = this._settings.get_boolean('replace-banners') && !this._coucouAt ? new Notifications(this._island, () => this._settings.get_string('privacy')) : null;
     }
 
     _buildPills() {

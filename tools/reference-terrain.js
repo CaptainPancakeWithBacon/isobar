@@ -15,12 +15,13 @@ export function levelBand(v) {
 const RIPPLE_SPEED = 230;   // px per second
 const RIPPLE_DECAY = 0.9;   // per second
 const RIPPLE_WIDTH = 700;   // 2 * sigma^2, in px^2
+const PEAK_WIDTH = 45000;   // 2 * sigma^2 of the summit, sigma = 150 px
 
 /**
  * Fill `field` ((cols + 1) * (rows + 1) values, row-major) with the height at each grid corner.
  * `calm` scales the drifting base terrain only, ripples always show.
  */
-export function sampleField(field, cols, rows, cs, {now, seed, ripples, calm}) {
+export function sampleField(field, cols, rows, cs, {now, seed, ripples, calm, peak}) {
     const t = now / 1000;
     const [sx, sy] = seed;
     for (let j = 0; j <= rows; j++) {
@@ -36,6 +37,8 @@ export function sampleField(field, cols, rows, cs, {now, seed, ripples, calm}) {
                 const off = Math.hypot(x - r.x, y - r.y) - age * RIPPLE_SPEED;
                 v += r.amp * Math.exp(-off * off / RIPPLE_WIDTH) * Math.exp(-age * RIPPLE_DECAY);
             }
+            if (peak && peak.amp)
+                v += peak.amp * Math.exp(-((x - peak.x) ** 2 + (y - peak.y) ** 2) / PEAK_WIDTH);
             field[j * (cols + 1) + i] = v;
         }
     }

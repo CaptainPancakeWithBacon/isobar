@@ -38,6 +38,7 @@ GNOME is calm but plain, and most shell themes only repaint it. Isobar changes w
 ## Looks
 
 - 🎨 **Five light palettes**, picked from a menu in quick settings: mint, sand, sky, blush and stone. They change the terrain, bar, menus and island together.
+- 🐣 **Coucou-aware.** If [Coucou](#coucou) is running, the terrain builds a summit under it and Isobar's own island steps aside, so nothing shows twice.
 - 🗺️ **A contour desktop.** A shader draws the lines behind your windows. The terrain drifts slowly, ripples when you switch workspace or open quick settings, and calms down in Focus mode.
 - 📏 **A different bar.** Workspace pills on the left (the current one is long), date and battery as one button that opens quick settings.
 - 🖤 **Quick settings in ink and paper**, with Focus, Privacy and Palette toggles.
@@ -92,6 +93,7 @@ Most settings are toggles in quick settings. All of them are also GSettings keys
 | Calm terrain | **Focus** toggle | `focus` | off |
 | How much a notification shows | **Privacy** toggle, cycles on click | `privacy`: `all`, `title`, `app` | `all` |
 | Notifications on the island instead of GNOME's banner | — | `replace-banners` | on |
+| Step aside for Coucou, with a summit in the terrain under it | — | `coucou-aware` | on |
 | Terrain redraws per second at rest (0 = still until something happens) | — | `idle-fps`, 0 to 30 | 10 |
 
 ```bash
@@ -190,7 +192,15 @@ The animations above are made from real frames: run the driver with `ISOBAR_ONLY
 
 ## Coucou
 
-[Coucou](https://github.com/Louis-CFM/coucou) is a separate app with a similar idea, by Louis Raille. Isobar began as a shell designed to sit next to it, and then grew an island of its own. Isobar does not include or depend on Coucou. Coucou's name, mascot and sounds belong to its author.
+[Coucou](https://github.com/Louis-CFM/coucou) is a small companion that lives under the top bar (by Louis Raille; the author of this repository uses a fork). Isobar is meant to be the calm room around it. Isobar's own island is a fallback for when Coucou is not running.
+
+While Coucou's island window is on screen, Isobar notices and:
+
+- builds a summit in the terrain under it, with the contour lines circling it;
+- keeps its own island hidden, and leaves notifications and music to Coucou, so nothing shows twice;
+- still ripples the terrain for events it is sent.
+
+Set `coucou-aware` to false to turn this off and always use Isobar's own island. Isobar does not include or depend on Coucou. Coucou's name, mascot and sounds belong to its author.
 
 ## Credits and license
 

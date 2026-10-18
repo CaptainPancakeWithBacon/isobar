@@ -140,6 +140,12 @@ export default class Driver extends Extension {
             await sleep(1200);
             return this._checkNotifications();
         }
+        if (GLib.getenv('ISOBAR_ONLY') === 'agents') {
+            await sleep(5000);
+            Main.overview.hide();
+            await sleep(1200);
+            return this._checkAgents();
+        }
         if (GLib.getenv('ISOBAR_ONLY') === 'pointer') {
             await sleep(5000);
             Main.overview.hide();
@@ -208,6 +214,7 @@ export default class Driver extends Extension {
         await this._checkNotifications();
         await this._checkMusic();
         await this._checkIslandPointer();
+        await this._checkAgents();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -519,6 +526,34 @@ export default class Driver extends Extension {
         Main.extensionManager.enableExtension(uuid);
         await sleep(1500);
         expect('a song while Isobar is off is not heard, and nothing breaks', String(isl().shown), 'null');
+    }
+
+    // An agent's hook runs the relay, exactly as Claude Code would: JSON on stdin
+    async _checkAgents() {
+        const uuid = 'isobar@gijs.dev';
+        const ext = () => Main.extensionManager.lookup(uuid).stateObj;
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        const relay = (agent, event, payload) => new Promise(resolve => {
+            const proc = Gio.Subprocess.new(['python3', `${GLib.getenv('ROOT')}/hooks/relay.py`, agent, event],
+                Gio.SubprocessFlags.STDIN_PIPE | Gio.SubprocessFlags.STDERR_MERGE);
+            proc.communicate_utf8_async(JSON.stringify(payload), null, () => resolve());
+        });
+        await sleep(800);
+        await relay('claude', 'Notification', {cwd: '/home/me/code/isobar', message: 'Claude needs your permission'});
+        await sleep(900);
+        expect('a Claude hook opens the island: title', String(ext()._island.shown?.title), 'Claude needs you');
+        expect('and it names the project', String(ext()._island.shown?.subtitle), 'isobar');
+        expect('and ripples as something that needs you', String(ext()._terrain._ripples.some(r => r.amp === 2.4)), 'true');
+        await sleep(10500);
+        ext()._settings.set_string('privacy', 'app');
+        await relay('claude', 'Stop', {cwd: '/home/me/code/isobar'});
+        await sleep(900);
+        expect('agent events stay readable at the strictest privacy level', `${ext()._island.shown?.title}|${ext()._island.shown?.subtitle}`, 'Claude is done|isobar');
+        ext()._settings.set_string('privacy', 'all');
+        await sleep(5500);
+        await relay('claude', 'PreToolUse', {cwd: '/x'});
+        await sleep(600);
+        expect('an event the relay does not show leaves the island closed', String(ext()._island.shown), 'null');
     }
 
     // Move the virtual pointer onto an actor (true) or well away from the island (false)

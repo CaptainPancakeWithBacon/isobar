@@ -71,7 +71,19 @@ gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell/Exten
 
 The arguments are a title, a subtitle, a kind (`needs`, `error`, `done` or `info`) and the number of seconds (0 for the default of that kind). A more important kind takes over once the current event has been shown for 1.5 seconds; the others queue, up to eight. Titles are cut at 60 characters and subtitles at 90. The ripple grows with the kind.
 
-App notifications open the island instead of GNOME's banner and stay in the message list. Critical ones count as "needs you", low-urgency ones stay off the island, as GNOME shows no banner for them either. Set `replace-banners` to false (`dconf write /org/gnome/shell/extensions/isobar/replace-banners false`) to get GNOME's banners back. The **Privacy** toggle in quick settings cycles how much a notification shows on the island: everything, title only, or the app name only. Events you send to the island yourself are always shown in full. When a media player (anything that speaks MPRIS) starts a new song, the island shows its title and artist; resuming the same song stays quiet. Resting the pointer on an open island keeps it open until you leave; a click dismisses it and moves on to the next event. Hooks, hooks for AI agents are planned, see [`docs/design.md`](docs/design.md). The island is new: it has automated checks but has not been used on a real desktop for any length of time. The title uses Big Shoulders Display if it is installed, then a condensed system font, then the default font; an extension cannot load a font of its own.
+App notifications open the island instead of GNOME's banner and stay in the message list. Critical ones count as "needs you", low-urgency ones stay off the island, as GNOME shows no banner for them either. Set `replace-banners` to false (`dconf write /org/gnome/shell/extensions/isobar/replace-banners false`) to get GNOME's banners back. The **Privacy** toggle in quick settings cycles how much a notification shows on the island: everything, title only, or the app name only. Events you send to the island yourself are always shown in full. When a media player (anything that speaks MPRIS) starts a new song, the island shows its title and artist; resuming the same song stays quiet. Resting the pointer on an open island keeps it open until you leave; a click dismisses it and moves on to the next event. Agent hooks are described below; the design is in [`docs/design.md`](docs/design.md). The island is new: it has automated checks but has not been used on a real desktop for any length of time. The title uses Big Shoulders Display if it is installed, then a condensed system font, then the default font; an extension cannot load a font of its own.
+
+## AI agent hooks
+
+An agent can tell the island when it is done or needs you. One small relay ([`hooks/relay.py`](hooks/relay.py)) turns an agent's hook into a call to the island's D-Bus method, and [`hooks/install.py`](hooks/install.py) sets the hook up. The hooks are not part of the extension itself; nothing is installed until you run the installer.
+
+| Agent | Shows | Install | Status |
+| --- | --- | --- | --- |
+| Claude Code | needs you (`Notification`), done (`Stop`) | `python3 hooks/install.py claude` | tested end to end with the relay, not with a live Claude Code session |
+| OpenCode | needs you (`permission.asked`), done (`session.idle`) | `python3 hooks/install.py opencode` | written from its plugin docs, untested |
+| Copilot CLI | done (`sessionEnd`), error (`errorOccurred`) | `python3 hooks/install.py copilot --repo DIR` | written from the GitHub hooks docs, untested; unclear whether the CLI runs them |
+
+`--remove` takes them away again, and only touches entries that mention `relay.py`. Agent events are always shown in full, whatever the privacy level. Other agents (Cursor, Gemini CLI, Codex) are not supported yet; the relay only needs a new line in its table once their hook format is known.
 
 ## Uninstall
 

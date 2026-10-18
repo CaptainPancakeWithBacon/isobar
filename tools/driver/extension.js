@@ -140,6 +140,12 @@ export default class Driver extends Extension {
             await sleep(1200);
             return this._checkNotifications();
         }
+        if (GLib.getenv('ISOBAR_ONLY') === 'music') {
+            await sleep(5000);
+            Main.overview.hide();
+            await sleep(1200);
+            return this._checkMusic();
+        }
         if (GLib.getenv('ISOBAR_BENCH'))
             return this._bench();
         await sleep(4000);
@@ -194,6 +200,7 @@ export default class Driver extends Extension {
         await this._checkIdleRates();
         await this._checkIsland();
         await this._checkNotifications();
+        await this._checkMusic();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -468,6 +475,43 @@ export default class Driver extends Extension {
         Main.extensionManager.enableExtension(uuid);
         await sleep(1500);
         expect('the island comes back with the extension', String(!!ext()._island), 'true');
+    }
+
+    // A media player says it plays a song, over the MPRIS interface every player speaks
+    async _checkMusic() {
+        const uuid = 'isobar@gijs.dev';
+        const isl = () => Main.extensionManager.lookup(uuid).stateObj._island;
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        const player = (status, title, artists = ['Kate Bush']) => new Promise(resolve => {
+            const meta = title ? `, 'Metadata': <{'xesam:title': <'${title}'>, 'xesam:artist': <${JSON.stringify(artists).replace(/"/g, "'")}>}>` : '';
+            const proc = Gio.Subprocess.new(['gdbus', 'emit', '--session', '--object-path', '/org/mpris/MediaPlayer2',
+                '--signal', 'org.freedesktop.DBus.Properties.PropertiesChanged', 'org.mpris.MediaPlayer2.Player',
+                `{'PlaybackStatus': <'${status}'>${meta}}`, '[]'], Gio.SubprocessFlags.STDERR_MERGE);
+            proc.wait_async(null, () => resolve());
+        });
+        await sleep(800);
+        await player('Playing', 'Cloudbusting');
+        await sleep(900);
+        expect('a song that starts opens the island with its title', String(isl().shown?.title), 'Cloudbusting');
+        expect('and its artist', String(isl().shown?.subtitle), 'Kate Bush');
+        await screenshot('09-island-music');
+        await sleep(3500);
+        expect('the island closes again', String(isl().shown), 'null');
+        await player('Paused');
+        await player('Playing');
+        await sleep(900);
+        expect('resuming the same song says nothing', String(isl().shown), 'null');
+        await player('Playing', 'Running Up That Hill');
+        await sleep(900);
+        expect('the next song is announced', String(isl().shown?.title), 'Running Up That Hill');
+        await sleep(3500);
+        Main.extensionManager.disableExtension(uuid);
+        await sleep(1000);
+        await player('Playing', 'After off');
+        await sleep(500);
+        Main.extensionManager.enableExtension(uuid);
+        await sleep(1500);
+        expect('a song while Isobar is off is not heard, and nothing breaks', String(isl().shown), 'null');
     }
 
     // An app sends a notification like any app would; the island shows it and GNOME's own banner stays away

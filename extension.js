@@ -12,6 +12,7 @@ import {workspacePills, formatDate, batteryLabel} from './lib/bar.js';
 import {Terrain} from './terrain-layer.js';
 import {Island} from './island.js';
 import {Notifications} from './notifications.js';
+import {Music} from './music.js';
 import {nextPrivacy} from './lib/notifications.js';
 
 const DOT = 8;
@@ -67,6 +68,7 @@ export default class Isobar extends Extension {
         this._idleFpsId = this._settings.connect('changed::idle-fps', () => {
             this._terrain.setIdleFps(this._settings.get_int('idle-fps'));
         });
+        this._music = new Music(this._island);
         this._syncBanners();
         this._bannersId = this._settings.connect('changed::replace-banners', () => this._syncBanners());
         const focusOn = this._settings.get_boolean('focus');
@@ -143,6 +145,7 @@ export default class Isobar extends Extension {
         if (this._bannersId)
             this._settings.disconnect(this._bannersId);
         this._notifications?.destroy();
+        this._music?.destroy();
         if (this._idleFpsId)
             this._settings.disconnect(this._idleFpsId);
         this._focus?.quickSettingsItems.forEach(item => item.destroy());
@@ -158,7 +161,7 @@ export default class Isobar extends Extension {
         this._pills?.destroy();
         this._meta?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._privacyToggle = this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+        this._music = this._privacyToggle = this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
     }
 
     _syncBanners() {

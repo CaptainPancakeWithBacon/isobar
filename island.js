@@ -5,7 +5,7 @@ import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {normalizeEvent, push, advance, nextWake, view} from './lib/island.js';
+import {normalizeEvent, push, advance, nextWake, view, dismiss, hold, release} from './lib/island.js';
 
 const PATH = '/org/gnome/Shell/Extensions/Isobar';
 const IFACE = `
@@ -45,8 +45,14 @@ export class Island {
         this.actor.add_child(this._title);
         this.actor.add_child(this._sub);
         this._place(REST, false);
-        // never in the way of the windows below, and out of sight over a fullscreen window
-        Main.layoutManager.addTopChrome(this.actor, {affectsInputRegion: false, trackFullscreen: true});
+        this._track(false);
+        // resting, the pill never gets in the way of the windows below; open, it takes the pointer
+        this.actor.connect('enter-event', () => this._pointer(hold(this._state)));
+        this.actor.connect('leave-event', () => this._pointer(release(this._state, nowMs())));
+        this.actor.connect('button-press-event', () => {
+            this._pointer(dismiss(this._state, nowMs()));
+            return Clutter.EVENT_STOP;
+        });
 
         this._monitorsId = Main.layoutManager.connect('monitors-changed', () => this._place(this._shown ? OPEN : REST, false));
         this._dbus = Gio.DBusExportedObject.wrapJSObject(IFACE, this);
@@ -67,6 +73,25 @@ export class Island {
         this._state = push(this._state, normalizeEvent({title, subtitle, kind, seconds}, id, nowMs()), nowMs());
         this._sync();
         return id;
+    }
+
+    // out of sight over a fullscreen window; `input`: whether the pill catches the pointer
+    _track(input) {
+        const lm = Main.layoutManager;
+        const params = {affectsInputRegion: input, trackFullscreen: true};
+        if (this._tracked) {
+            lm.untrackChrome(this.actor);
+            lm.trackChrome(this.actor, params);
+        } else {
+            lm.addTopChrome(this.actor, params);
+        }
+        this._tracked = true;
+        this.actor.reactive = input;
+    }
+
+    _pointer(state) {
+        this._state = state;
+        this._sync();
     }
 
     destroy() {
@@ -121,6 +146,8 @@ export class Island {
         this._sub.text = event.subtitle;
         this._sub.visible = event.subtitle !== '';
         this.actor.add_style_class_name('isobar-island-open');
+        if (!this.actor.reactive)
+            this._track(true);
         this._place(OPEN, true);
         for (const label of [this._title, this._sub])
             label.ease({opacity: 255, delay: 150, duration: 200, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
@@ -132,6 +159,7 @@ export class Island {
         for (const label of [this._title, this._sub])
             label.ease({opacity: 0, duration: 120, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
         this.actor.remove_style_class_name('isobar-island-open');
+        this._track(false);
         this._place(REST, true);
     }
 }

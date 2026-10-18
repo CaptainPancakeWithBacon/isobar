@@ -1,5 +1,5 @@
 import {test, eq, done} from './harness.js';
-import {normalizeEvent, push, advance, nextWake, view, MIN_SHOW_MS} from '../lib/island.js';
+import {normalizeEvent, push, advance, nextWake, view, dismiss, hold, release, MIN_SHOW_MS} from '../lib/island.js';
 
 const empty = {current: null, queue: []};
 const ev = (kind, at = 0, extra = {}) => normalizeEvent({title: `t-${kind}`, subtitle: '', kind, seconds: 0, ...extra}, 1, at);
@@ -91,6 +91,38 @@ test('a waiting urgent event wakes the island as soon as it may take over', () =
 test('the ripple grows with how much the event matters', () => {
     eq(['needs', 'error', 'done', 'info'].map(k => view(push(empty, ev(k), 0)).ripple), [2.4, 2.0, 1.6, 1.0]);
     eq(view(empty).ripple, 0);
+});
+
+test('a click dismisses the event and the next one takes its place', () => {
+    let s = push(empty, normalizeEvent({title: 'a', kind: 'done'}, 1, 0), 0);
+    s = push(s, normalizeEvent({title: 'b', kind: 'done'}, 2, 10), 10);
+    eq(view(dismiss(s, 500)).event.title, 'b');
+    eq(view(dismiss(dismiss(s, 500), 600)).event, null);
+});
+
+test('a held event stays however long the pointer rests, and the island does not wake', () => {
+    let s = hold(push(empty, normalizeEvent({title: 'a', kind: 'done'}, 1, 0), 0));
+    eq(view(advance(s, 60000)).event.title, 'a');
+    eq(nextWake(s, 60000), Infinity);
+});
+
+test('a more important event does not push a held one away', () => {
+    let s = hold(push(empty, normalizeEvent({title: 'a', kind: 'info'}, 1, 0), 0));
+    s = push(s, normalizeEvent({title: 'urgent', kind: 'needs'}, 2, 100), 100);
+    eq(view(advance(s, 20000)).event.title, 'a');
+});
+
+test('after the pointer leaves, the event stays a moment longer and then goes', () => {
+    let s = hold(push(empty, normalizeEvent({title: 'a', kind: 'done'}, 1, 0), 0));
+    s = release(s, 60000);
+    eq(nextWake(s, 60000), 1500);
+    eq(view(advance(s, 61499)).event.title, 'a');
+    eq(view(advance(s, 61500)).event, null);
+});
+
+test('holding or releasing an empty island does nothing', () => {
+    eq(hold(empty), empty);
+    eq(release(empty, 5), empty);
 });
 
 done();

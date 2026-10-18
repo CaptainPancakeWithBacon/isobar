@@ -93,7 +93,7 @@ export default class Driver extends Extension {
 
     // Host input can move the pointer under us (the nested window is on a real screen),
     // so aim, verify the pointer, press and release, and retry if the no click registered.
-    async _click(actor) {
+    async _click(actor, success = 'clicked') {
         if (!this._off)
             await this._calibrate();
         for (let attempt = 0; attempt < 6; attempt++) {
@@ -101,7 +101,7 @@ export default class Driver extends Extension {
             const [w, h] = actor.get_transformed_size();
             const tx = x + w / 2, ty = y + h / 2;
             const seen = [];
-            const ids = ['button-press-event', 'clicked'].map(s => actor.connect(s, () => {
+            const ids = [...new Set(['button-press-event', success ?? 'button-press-event'])].map(s => actor.connect(s, () => {
                 seen.push(s);
                 return Clutter.EVENT_PROPAGATE;
             }));
@@ -118,7 +118,7 @@ export default class Driver extends Extension {
             this._device.notify_button(GLib.get_monotonic_time(), Clutter.BUTTON_PRIMARY, Clutter.ButtonState.RELEASED);
             await sleep(120);  // the click is dispatched in the main loop, not synchronously
             ids.forEach(id => actor.disconnect(id));
-            if (seen.includes('clicked')) {
+            if (success === null || seen.includes(success)) {   // null: the island stops the press itself, so nothing else can see it
                 log(`clicked ${actor.accessible_name ?? actor.style_class}`);
                 return;
             }
@@ -139,6 +139,12 @@ export default class Driver extends Extension {
             Main.overview.hide();
             await sleep(1200);
             return this._checkNotifications();
+        }
+        if (GLib.getenv('ISOBAR_ONLY') === 'pointer') {
+            await sleep(5000);
+            Main.overview.hide();
+            await sleep(1200);
+            return this._checkIslandPointer();
         }
         if (GLib.getenv('ISOBAR_ONLY') === 'music') {
             await sleep(5000);
@@ -201,6 +207,7 @@ export default class Driver extends Extension {
         await this._checkIsland();
         await this._checkNotifications();
         await this._checkMusic();
+        await this._checkIslandPointer();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -512,6 +519,47 @@ export default class Driver extends Extension {
         Main.extensionManager.enableExtension(uuid);
         await sleep(1500);
         expect('a song while Isobar is off is not heard, and nothing breaks', String(isl().shown), 'null');
+    }
+
+    // Move the virtual pointer onto an actor (true) or well away from the island (false)
+    async _point(x, y) {
+        if (!this._off)
+            await this._calibrate();
+        this._device.notify_absolute_motion(GLib.get_monotonic_time(), x + this._off[0], y + this._off[1]);
+        await sleep(250);
+    }
+
+    // The pointer rests on the island, and a click dismisses it
+    async _checkIslandPointer() {
+        const uuid = 'isobar@gijs.dev';
+        const isl = () => Main.extensionManager.lookup(uuid).stateObj._island;
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        const a = isl().actor;
+        const mon = Main.layoutManager.primaryMonitor;
+        const away = () => this._point(mon.x + 200, mon.y + 500);
+        expect('a resting island does not catch the pointer', String(a.reactive), 'false');
+        await this._gdbus('Show', 'Held', '', 'info', 2);
+        await sleep(900);
+        expect('an open island does', String(a.reactive), 'true');
+        const [x, y] = a.get_transformed_position();
+        await this._point(x + a.width / 2, y + a.height / 2);
+        await sleep(2600);
+        expect('with the pointer on it the island stays past its time', String(isl().shown?.title), 'Held');
+        await away();
+        await sleep(1900);
+        expect('and goes a moment after the pointer leaves', String(isl().shown), 'null');
+        expect('then it lets the pointer through again', String(a.reactive), 'false');
+
+        await this._gdbus('Show', 'First', '', 'info', 20);
+        await this._gdbus('Show', 'Second', '', 'info', 20);
+        await sleep(900);
+        await this._click(a, null);
+        await sleep(500);
+        expect('a click moves on to the next event', String(isl().shown?.title), 'Second');
+        await this._click(a, null);
+        await sleep(500);
+        expect('and a second click closes the island', String(isl().shown), 'null');
+        await away();
     }
 
     // An app sends a notification like any app would; the island shows it and GNOME's own banner stays away

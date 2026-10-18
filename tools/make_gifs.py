@@ -1,5 +1,6 @@
 """Build the README animations from the frames the driver's demo mode saved.
-Run the driver with ISOBAR_ONLY=demo, then: python3 tools/make_gifs.py <driver output dir> docs/media
+Run the driver with ISOBAR_ONLY=demo and WITHOUT ISOBAR_HEADLESS: the headless shell plays animations about ten times too fast,
+so only the nested one (a window opens for about 40 s) records the real motion. Then: python3 tools/make_gifs.py <driver output dir> docs/media
 Each frame is shown for as long as it really took, so the animation plays at the speed of the shell."""
 import json
 import os
@@ -10,9 +11,9 @@ from PIL import Image
 src, dst = sys.argv[1], sys.argv[2]
 os.makedirs(dst, exist_ok=True)
 frames = json.load(open(f'{src}/demo-frames.json'))
-CROP = (320, 0, 960, 300)     # the bar, the island and the terrain around it, at full resolution
-SIZE = (640, 300)
-STEP = 1
+CROP = (200, 0, 600, 260)     # the bar, the island and the terrain around it, at full resolution (the nested window is 800x600)
+SIZE = (400, 260)
+STEP = 2                      # ~15 frames a second is smooth enough and half the size
 
 
 def load(name, crop, size):
@@ -37,4 +38,4 @@ def save(clip, stamps, step, last_hold, crop=CROP, size=SIZE):
 
 
 save('island', frames['island'], STEP, 1500)
-save('palettes', [[n, i * 1100, l] for i, (n, _, l) in enumerate(frames['palettes'])], 1, 1100, (0, 0, 1280, 520), (800, 325))
+save('palettes', [[n, i * 1100, l] for i, (n, _, l) in enumerate(frames['palettes'])], 1, 1100, (0, 0, 800, 330), (800, 330))

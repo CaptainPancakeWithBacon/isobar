@@ -8,7 +8,7 @@
 A quiet, light GNOME Shell extension. The desktop is a living contour map, the top bar is a thin ink strip, and a small pill under the bar opens for what matters: a notification, a song, an AI agent that needs you.
 
 <p align="center">
-  <img alt="The island opens for a notification, then for an agent that needs you, and the terrain ripples from it" src="docs/media/island.gif" width="640">
+  <img alt="The island opens for a notification, then for an agent that needs you, and the terrain ripples from it" src="docs/media/island.gif" width="480">
 </p>
 
 ## Features
@@ -138,7 +138,7 @@ ISOBAR_HEADLESS=1 ISOBAR_DRIVER_OUT=/tmp/isobar-run tools/nested.sh --drive
 
 It needs `gnome-shell` 46, `gjs`, GTK 4, Python 3 with Pillow, and takes about two minutes. Without `ISOBAR_HEADLESS` it opens a nested window instead, but then your own mouse can disturb the clicks. `tools/measure.sh` averages GPU use, battery power and shell CPU over a number of seconds, and changes nothing.
 
-The animations in this README are made from real frames of the test shell: run the driver with `ISOBAR_ONLY=demo`, then `python3 tools/make_gifs.py <output dir> docs/media`.
+The animations in this README are made from real frames of the test shell: run the driver with `ISOBAR_ONLY=demo` (without `ISOBAR_HEADLESS`: the headless shell plays animations about ten times too fast, so a window opens for about 40 seconds), then `python3 tools/make_gifs.py <output dir> docs/media`.
 
 `tools/pack.sh` builds the zip for extensions.gnome.org and checks what is in it; what is left before a release is in [`docs/releasing.md`](docs/releasing.md).
 

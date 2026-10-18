@@ -38,16 +38,24 @@ export class Island {
 
         this._title = new St.Label({style_class: 'isobar-island-title', opacity: 0});
         this._sub = new St.Label({style_class: 'isobar-island-sub', opacity: 0});
-        // a Clutter layout manager, because St.BoxLayout's `vertical` (46) became `orientation` (48)
-        this.actor = new St.Widget({
-            style_class: 'isobar-island', reactive: false, clip_to_allocation: true,
-            layout_manager: new Clutter.BoxLayout({orientation: Clutter.Orientation.VERTICAL}),
-        });
         // long text is cut with an ellipsis instead of running out of the pill
         for (const label of [this._title, this._sub])
             label.clutter_text.ellipsize = Pango.EllipsizeMode.END;
-        this.actor.add_child(this._title);
-        this.actor.add_child(this._sub);
+        // three layers: the paper pill, an ink layer that fades in over it (a stylesheet colour cannot be eased), and the text.
+        // Clutter layout managers, because St.BoxLayout's `vertical` (46) became `orientation` (48)
+        this._ink = new St.Widget({style_class: 'isobar-island-ink', x_expand: true, y_expand: true, opacity: 0});
+        const text = new St.Widget({
+            style_class: 'isobar-island-box', x_expand: true, y_expand: true,
+            layout_manager: new Clutter.BoxLayout({orientation: Clutter.Orientation.VERTICAL}),
+        });
+        text.add_child(this._title);
+        text.add_child(this._sub);
+        this.actor = new St.Widget({
+            style_class: 'isobar-island', reactive: false, clip_to_allocation: true,
+            layout_manager: new Clutter.BinLayout(),
+        });
+        this.actor.add_child(this._ink);
+        this.actor.add_child(text);
         this._place(REST, false);
         this._track(false);
         // resting, the pill never gets in the way of the windows below; open, it takes the pointer
@@ -117,7 +125,16 @@ export class Island {
             this.actor.set_size(width, height);
             return;
         }
-        this.actor.ease({x, y, width, height, duration: 420, mode: Clutter.AnimationMode.EASE_OUT_BACK});
+        const grow = width > this.actor.width;
+        const {EASE_OUT_CUBIC, EASE_OUT_BACK, EASE_IN_OUT_CUBIC} = Clutter.AnimationMode;
+        // opening goes wide first and then tall, closing goes short first and then narrow
+        if (grow) {
+            this.actor.ease({x, y, width, duration: 380, mode: EASE_OUT_CUBIC});
+            this.actor.ease({height, delay: 140, duration: 520, mode: EASE_OUT_BACK});
+        } else {
+            this.actor.ease({height, duration: 260, mode: EASE_IN_OUT_CUBIC});
+            this.actor.ease({x, y, width, delay: 140, duration: 340, mode: EASE_IN_OUT_CUBIC});
+        }
     }
 
     // Show what the logic says should be shown, and plan the next moment it has something to do.
@@ -149,12 +166,12 @@ export class Island {
         this._title.text = event.title;
         this._sub.text = event.subtitle;
         this._sub.visible = event.subtitle !== '';
-        this.actor.add_style_class_name('isobar-island-open');
+        this._ink.ease({opacity: 255, duration: 420, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
         if (!this.actor.reactive)
             this._track(true);
         this._place(OPEN, true);
         for (const label of [this._title, this._sub])
-            label.ease({opacity: 255, delay: 150, duration: 200, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+            label.ease({opacity: 255, delay: 420, duration: 220, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
         const mon = Main.layoutManager.primaryMonitor;
         this._terrain.ripple(mon.x + mon.width / 2, mon.y + Math.round(Main.layoutManager.panelBox.height) - HANG + OPEN[1], ripple);
     }
@@ -162,7 +179,7 @@ export class Island {
     _close() {
         for (const label of [this._title, this._sub])
             label.ease({opacity: 0, duration: 120, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
-        this.actor.remove_style_class_name('isobar-island-open');
+        this._ink.ease({opacity: 0, delay: 180, duration: 300, mode: Clutter.AnimationMode.EASE_IN_OUT_QUAD});
         this._track(false);
         this._place(REST, true);
     }

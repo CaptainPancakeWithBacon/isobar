@@ -29,6 +29,13 @@
 /* the island */
 .isobar-island {
     border-radius: 22px;
+}
+
+.isobar-island-ink {
+    border-radius: 22px;
+}
+
+.isobar-island-box {
     padding: 10px 22px 0 22px;
 }
 

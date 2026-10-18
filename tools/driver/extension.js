@@ -467,14 +467,34 @@ export default class Driver extends Extension {
         expect('Show answers with an id over D-Bus', String(/^\(uint32 \d+,\)$/.test(out)), 'true');
         await sleep(900);
         expect('the island opens to 280x60', size(a), '280x60');
-        expect('the open island is ink', bg(a), '#0f2f33');
+        expect('the open island is ink', `${bg(isl()._ink)} ${isl()._ink.opacity}`, '#0f2f33 255');
         expect('it shows the title', String(isl().shown?.title), 'Build finished');
         expect('a ripple of the strength for done leaves from it', String(terrain()._ripples.some(r => r.amp === 1.6)), 'true');
         await screenshot('07-island-open');
         await sleep(3200);
         expect('the island closes again', size(a), '64x18');
-        expect('and is white again', bg(a), '#eaf4f0');
+        expect('and is white again', `${bg(a)} ${isl()._ink.opacity}`, '#eaf4f0 0');
         expect('no timer runs once it is back at rest', String(isl().timerArmed), 'false');
+
+        // opening is a movement, not a switch: wide first, then tall, and the colour fades in
+        {
+            // The headless shell runs animations about ten times too fast (a 2 s ease ends within 250 ms), so timing on screen is not measured here; the README animation is recorded in a nested shell, which keeps real time.
+            // What is checked is what the island asks for, in the same tick as the event.
+            const t = (actor, prop) => { const tr = actor.get_transition(prop); return tr ? `${tr.get_delay()}+${tr.get_duration()}` : 'none'; };
+            isl().Show('Motion', '', 'info', 3);   // called directly: a gdbus process takes longer to answer than the first frames last
+            expect('opening: the width starts at once and takes a moment', t(a, 'width'), '0+380');
+            expect('opening: the height follows a little later and takes longer', t(a, 'height'), '140+520');
+            expect('opening: the ink fades in instead of switching', t(isl()._ink, 'opacity'), '0+420');
+            expect('opening: the text waits for the shape', t(isl()._title, 'opacity'), '420+220');
+            await sleep(1200);
+            expect('and when it has settled it is open and ink', `${size(a)} ${isl()._ink.opacity}`, '280x60 255');
+            const {dismiss} = await import(`file://${GLib.getenv('ROOT')}/lib/island.js`);
+            isl()._pointer(dismiss(isl()._state, GLib.get_monotonic_time() / 1000));   // what a click does
+            expect('closing: the height goes first', t(a, 'height'), '0+260');
+            expect('closing: the width follows', t(a, 'width'), '140+340');
+            await sleep(900);
+            expect('it closes again after the motion test', size(a), '64x18');
+        }
 
         await this._gdbus('Show', 'x'.repeat(300), 'y'.repeat(300), 'info', 2);
         await sleep(300);

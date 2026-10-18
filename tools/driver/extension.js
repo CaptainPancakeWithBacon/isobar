@@ -466,7 +466,7 @@ export default class Driver extends Extension {
         log(`Show answered: ${out}`);
         expect('Show answers with an id over D-Bus', String(/^\(uint32 \d+,\)$/.test(out)), 'true');
         await sleep(900);
-        expect('the island opens to 340x84', size(a), '340x84');
+        expect('the island opens to 280x60', size(a), '280x60');
         expect('the open island is ink', bg(a), '#0f2f33');
         expect('it shows the title', String(isl().shown?.title), 'Build finished');
         expect('a ripple of the strength for done leaves from it', String(terrain()._ripples.some(r => r.amp === 1.6)), 'true');

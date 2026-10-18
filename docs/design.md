@@ -38,7 +38,7 @@ The island is what Isobar is. It lives inside the extension, so anyone who insta
 
 **Decided**
 - At rest it is a white pill, always visible, 64x18 px, hanging 8 px into the bar. It costs nothing there: no timer runs.
-- Events open it to 340x84 in ink with the title in large type; each opening ripples the terrain from the island's lower edge, and the ripple grows with the kind (`needs` 2.4, `error` 2.0, `done` 1.6, `info` 1.0).
+- Events open it to 280x60 in ink with the title in large type; each opening ripples the terrain from the island's lower edge, and the ripple grows with the kind (`needs` 2.4, `error` 2.0, `done` 1.6, `info` 1.0).
 - It replaces GNOME's notification banners, with the island switching that off again if hiding a banner stops working on a GNOME version. Showing both would put the banner and the island on the same spot.
 - Privacy is a switch in quick settings next to Focus, with three levels: everything, title only, app name only. Events you send yourself, such as "Claude is done", stay readable.
 - AI agents are served by one small relay that turns each agent's hook input into a `Show` call, plus an adapter and an installer per agent that shows the change, backs up the config and only then writes it. The hooks live in the repository, outside the extension zip, because extensions.gnome.org discourages scripts in the extension. Claude Code first, then OpenCode and Copilot CLI (not yet looked into), the rest untested. A relay must fail silently, be fast, send no content beyond short fields, and never chain a status line.

@@ -28,16 +28,16 @@
 
 /* the island */
 .isobar-island {
-    border-radius: 28px;
-    padding: 16px 28px 0 28px;
+    border-radius: 22px;
+    padding: 10px 22px 0 22px;
 }
 
 .isobar-island-title {
     font-family: 'Big Shoulders Display', 'Ubuntu Condensed', Oswald, 'Arial Narrow', sans-serif;
     font-weight: 800;
-    font-size: 28px;
+    font-size: 20px;
 }
 
 .isobar-island-sub {
-    font-size: 12px;
+    font-size: 11px;
 }

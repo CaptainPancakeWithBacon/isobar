@@ -1,6 +1,7 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -22,7 +23,7 @@ const IFACE = `
 </node>`;
 
 const REST = [64, 18];
-const OPEN = [340, 84];
+const OPEN = [280, 60];
 const HANG = 8;       // px the island reaches up into the bar, so it looks hung from it
 const nowMs = () => GLib.get_monotonic_time() / 1000;
 
@@ -42,6 +43,9 @@ export class Island {
             style_class: 'isobar-island', reactive: false, clip_to_allocation: true,
             layout_manager: new Clutter.BoxLayout({orientation: Clutter.Orientation.VERTICAL}),
         });
+        // long text is cut with an ellipsis instead of running out of the pill
+        for (const label of [this._title, this._sub])
+            label.clutter_text.ellipsize = Pango.EllipsizeMode.END;
         this.actor.add_child(this._title);
         this.actor.add_child(this._sub);
         this._place(REST, false);

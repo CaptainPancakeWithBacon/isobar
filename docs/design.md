@@ -32,6 +32,23 @@ Type: Big Shoulders Display for numerals and headlines, Schibsted Grotesk for te
 - **Overview and app grid:** restyled in the same language. Not designed yet.
 - **Notifications:** Coucou already reads them over D-Bus and hides the GNOME banners. Isobar should not duplicate that.
 
+## The island
+
+The island is what Isobar is. It lives inside the extension, so anyone who installs Isobar has it; the standalone app it was first sketched for cannot anchor under the bar on GNOME, because Mutter has no layer-shell.
+
+**Decided**
+- At rest it is a white pill, always visible, 64x18 px, hanging 8 px into the bar. It costs nothing there: no timer runs.
+- Events open it to 340x84 in ink with the title in large type; each opening ripples the terrain from the island's lower edge, and the ripple grows with the kind (`needs` 2.4, `error` 2.0, `done` 1.6, `info` 1.0).
+- It replaces GNOME's notification banners, with the island switching that off again if hiding a banner stops working on a GNOME version. Showing both would put the banner and the island on the same spot.
+- Privacy is a switch in quick settings next to Focus, with three levels: everything, title only, app name only. Events you send yourself, such as "Claude is done", stay readable.
+- AI agents are served by one small relay that turns each agent's hook input into a `Show` call, plus an adapter and an installer per agent that shows the change, backs up the config and only then writes it. The hooks live in the repository, outside the extension zip, because extensions.gnome.org discourages scripts in the extension. Claude Code first, then OpenCode and Copilot CLI (not yet looked into), the rest untested. A relay must fail silently, be fast, send no content beyond short fields, and never chain a status line.
+
+**Built so far (step 1):** the pill, opening and closing, the ripple, and `Show` over D-Bus, with its logic in `lib/island.js` (priority, queue, timing, ripple strength) and 15 unit tests, and 22 driver checks that call `Show` from a real D-Bus client and check sizes, colours, the ripple, the queue, long text, and that the D-Bus object and the actor are gone when the extension is off.
+
+**Still to do:** notifications with the banner replaced, then the privacy switch, then music, then hover and click, then the hooks.
+
+**Found while building:** GNOME 46's `St.BoxLayout` has no `orientation`; it arrives in 48, where `vertical` is deprecated. The island uses a Clutter layout manager so the same code runs on both.
+
 ## Open questions
 
 - How does Isobar learn that Coucou expanded, so the terrain can ripple? Options: Coucou emits a D-Bus signal, or Isobar watches the same notification stream. Not decided.

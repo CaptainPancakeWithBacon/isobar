@@ -10,6 +10,7 @@ import {QuickToggle, SystemIndicator} from 'resource:///org/gnome/shell/ui/quick
 
 import {workspacePills, formatDate, batteryLabel} from './lib/bar.js';
 import {Terrain} from './terrain-layer.js';
+import {Island} from './island.js';
 
 const DOT = 8;
 const LONG = 28;
@@ -37,6 +38,7 @@ export default class Isobar extends Extension {
 
         this._terrain = new Terrain();
         this._terrain.setWorkspace(wm.get_active_workspace_index(), true);
+        this._island = new Island(this._terrain);
 
         // Focus survives logging out and turning the extension off and on
         this._settings = this.getSettings();
@@ -118,6 +120,7 @@ export default class Isobar extends Extension {
             this._settings.disconnect(this._idleFpsId);
         this._focus?.quickSettingsItems.forEach(item => item.destroy());
         this._focus?.destroy();
+        this._island?.destroy();
         this._terrain?.destroy();
         if (this._battery_icon) {
             this._battery_icon.disconnect(this._batteryIconId);
@@ -128,7 +131,7 @@ export default class Isobar extends Extension {
         this._pills?.destroy();
         this._meta?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+        this._island = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
     }
 
     _buildPills() {

@@ -128,6 +128,12 @@ export default class Driver extends Extension {
     }
 
     async _run() {
+        if (GLib.getenv('ISOBAR_ONLY') === 'island') {
+            await sleep(5000);
+            Main.overview.hide();
+            await sleep(1200);
+            return this._checkIsland();
+        }
         if (GLib.getenv('ISOBAR_BENCH'))
             return this._bench();
         await sleep(4000);
@@ -180,6 +186,7 @@ export default class Driver extends Extension {
         await this._checkPersistence();
         await this._checkEfficiency();
         await this._checkIdleRates();
+        await this._checkIsland();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -373,6 +380,87 @@ export default class Driver extends Extension {
         expect('the terrain is still again after the ripple', String(await rate(1500)), '0');
 
         settings.set_int('idle-fps', 10);
+    }
+
+    // Call a method of the extension's D-Bus interface like any other client would.
+    _gdbus(method, ...args) {
+        const proc = Gio.Subprocess.new(['gdbus', 'call', '--session', '--dest', 'org.gnome.Shell',
+            '--object-path', '/org/gnome/Shell/Extensions/Isobar', '--method', `org.gnome.Shell.Extensions.Isobar.${method}`,
+            ...args.map(String)], Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_MERGE);
+        return new Promise(resolve => proc.communicate_utf8_async(null, null, (p, res) => {
+            try {
+                resolve(p.communicate_utf8_finish(res)[1].trim());
+            } catch (e) {
+                resolve(`ERROR ${e.message}`);
+            }
+        }));
+    }
+
+    // The island: a white pill under the bar that opens for events sent over D-Bus
+    async _checkIsland() {
+        const uuid = 'isobar@gijs.dev';
+        const ext = () => Main.extensionManager.lookup(uuid).stateObj;
+        const isl = () => ext()._island;
+        const terrain = () => ext()._terrain;
+        const mon = Main.layoutManager.primaryMonitor;
+        const panel = Main.layoutManager.panelBox.height;
+        const hex = c => '#' + [c.red, c.green, c.blue].map(v => v.toString(16).padStart(2, '0')).join('');
+        const bg = a => hex(a.get_theme_node().get_background_color());
+        const size = a => `${Math.round(a.width)}x${Math.round(a.height)}`;
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+
+        await sleep(800);
+        expect('the island exists', String(!!isl()), 'true');
+        const a = isl()?.actor;
+        if (!a)
+            return;
+        expect('the island rests as a 64x18 pill', size(a), '64x18');
+        expect('the resting pill is paper white', bg(a), '#eaf4f0');
+        expect('it hangs 8 px into the bar', String(Math.round(a.y)), String(mon.y + panel - 8));
+        expect('it is centred on the monitor', String(Math.round(a.x + a.width / 2)), String(Math.round(mon.x + mon.width / 2)));
+        expect('no timer runs while it rests', String(isl().timerArmed), 'false');
+        await screenshot('07-island-rest');
+
+        const out = await this._gdbus('Show', 'Build finished', 'isobar took 2m 14s', 'done', 3);
+        log(`Show answered: ${out}`);
+        expect('Show answers with an id over D-Bus', String(/^\(uint32 \d+,\)$/.test(out)), 'true');
+        await sleep(900);
+        expect('the island opens to 340x84', size(a), '340x84');
+        expect('the open island is ink', bg(a), '#0f2f33');
+        expect('it shows the title', String(isl().shown?.title), 'Build finished');
+        expect('a ripple of the strength for done leaves from it', String(terrain()._ripples.some(r => r.amp === 1.6)), 'true');
+        await screenshot('07-island-open');
+        await sleep(3200);
+        expect('the island closes again', size(a), '64x18');
+        expect('and is white again', bg(a), '#eaf4f0');
+        expect('no timer runs once it is back at rest', String(isl().timerArmed), 'false');
+
+        await this._gdbus('Show', 'x'.repeat(300), 'y'.repeat(300), 'info', 2);
+        await sleep(300);
+        expect('a very long title is cut', String(isl().shown.title.length <= 60), 'true');
+        await sleep(2800);
+
+        await this._gdbus('Show', 'calm', '', 'info', 6);
+        await sleep(200);
+        await this._gdbus('Show', 'Claude needs you', 'isobar', 'needs', 5);
+        await sleep(300);
+        expect('a more important event first lets the current one have its moment', String(isl().shown?.title), 'calm');
+        await sleep(1500);
+        expect('and then takes over', String(isl().shown?.title), 'Claude needs you');
+        await sleep(5600);
+        expect('the island rests when everything has been shown', String(isl().shown), 'null');
+
+        Main.extensionManager.disableExtension(uuid);
+        await sleep(1200);
+        const gone = await this._gdbus('Show', 'x', '', 'info', 1);
+        expect('the D-Bus object is gone while the extension is off', String(/Error/.test(gone)), 'true');
+        const left = [];
+        const walk = n => { if (n.has_style_class_name?.('isobar-island')) left.push(n); n.get_children().forEach(walk); };
+        walk(Main.layoutManager.uiGroup);
+        expect('no island actor is left behind', String(left.length), '0');
+        Main.extensionManager.enableExtension(uuid);
+        await sleep(1500);
+        expect('the island comes back with the extension', String(!!ext()._island), 'true');
     }
 
     // Cost per renderer at the same redraw rate: nothing, cairo, shader.

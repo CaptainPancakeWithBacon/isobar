@@ -61,6 +61,18 @@ dconf write /org/gnome/shell/extensions/isobar/idle-fps 5
 
 Focus is the toggle in quick settings. It is stored in `/org/gnome/shell/extensions/isobar/focus`.
 
+## The island
+
+A white pill hangs under the middle of the bar. Anything can send it an event over D-Bus: it opens, ripples the terrain, and closes again.
+
+```bash
+gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell/Extensions/Isobar --method org.gnome.Shell.Extensions.Isobar.Show "Build finished" "isobar took 2m 14s" done 5
+```
+
+The arguments are a title, a subtitle, a kind (`needs`, `error`, `done` or `info`) and the number of seconds (0 for the default of that kind). A more important kind takes over once the current event has been shown for 1.5 seconds; the others queue, up to eight. Titles are cut at 60 characters and subtitles at 90. The ripple grows with the kind.
+
+For now it only shows what is sent to it. Notifications from apps, music, hover, a privacy switch and hooks for AI agents are planned, see [`docs/design.md`](docs/design.md). The island is new: it has automated checks but has not been used on a real desktop for any length of time. The title uses Big Shoulders Display if it is installed, then a condensed system font, then the default font; an extension cannot load a font of its own.
+
 ## Uninstall
 
 ```bash

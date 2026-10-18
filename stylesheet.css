@@ -84,3 +84,26 @@
 .quick-settings .quick-toggle-arrow {
     border-left-width: 0;
 }
+
+/* the island */
+.isobar-island {
+    background-color: #EAF4F0;
+    border-radius: 28px;
+    padding: 16px 28px 0 28px;
+}
+
+.isobar-island-open {
+    background-color: #0F2F33;
+}
+
+.isobar-island-title {
+    color: #EAF4F0;
+    font-family: 'Big Shoulders Display', 'Ubuntu Condensed', Oswald, 'Arial Narrow', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+}
+
+.isobar-island-sub {
+    color: #9DBDB8;
+    font-size: 12px;
+}

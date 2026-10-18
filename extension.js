@@ -12,6 +12,7 @@ import {workspacePills, formatDate, batteryLabel} from './lib/bar.js';
 import {Terrain} from './terrain-layer.js';
 import {Island} from './island.js';
 import {Notifications} from './notifications.js';
+import {nextPrivacy} from './lib/notifications.js';
 
 const DOT = 8;
 const LONG = 28;
@@ -23,6 +24,25 @@ const UPowerProxy = Gio.DBusProxy.makeProxyWrapper(`
     <property name="IsPresent" type="b" access="read"/>
   </interface>
 </node>`);
+
+// Cycles how much a notification shows on the island: everything, title only, app name only.
+const PRIVACY_LABELS = {all: 'Everything', title: 'Title only', app: 'App name only'};
+const PrivacyToggle = GObject.registerClass(class IsobarPrivacyToggle extends QuickToggle {
+    _init(settings) {
+        super._init({title: 'Privacy', iconName: 'view-conceal-symbolic'});
+        const sync = () => {
+            const level = settings.get_string('privacy');
+            this.subtitle = PRIVACY_LABELS[level];
+            this.checked = level !== 'all';
+        };
+        // GNOME flips `checked` on a click; the level decides it, so the click only moves the level
+        this.connect('clicked', () => settings.set_string('privacy', nextPrivacy(settings.get_string('privacy'))));
+        this._id = settings.connect('changed::privacy', sync);
+        this._settings = settings;
+        this.connect('destroy', () => settings.disconnect(this._id));
+        sync();
+    }
+});
 
 // Focus calms the terrain; ripples from events still show.
 const FocusToggle = GObject.registerClass(class IsobarFocusToggle extends QuickToggle {
@@ -59,7 +79,8 @@ export default class Isobar extends Extension {
             focusToggle.checked = this._settings.get_boolean('focus');
         });
         this._focus = new SystemIndicator();
-        this._focus.quickSettingsItems.push(focusToggle);
+        this._privacyToggle = new PrivacyToggle(this._settings);
+        this._focus.quickSettingsItems.push(focusToggle, this._privacyToggle);
         panel.statusArea.quickSettings.addExternalIndicator(this._focus);
 
         this._hidden = [panel.statusArea.activities, panel.statusArea.dateMenu];
@@ -137,12 +158,12 @@ export default class Isobar extends Extension {
         this._pills?.destroy();
         this._meta?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+        this._privacyToggle = this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
     }
 
     _syncBanners() {
         this._notifications?.destroy();
-        this._notifications = this._settings.get_boolean('replace-banners') ? new Notifications(this._island) : null;
+        this._notifications = this._settings.get_boolean('replace-banners') ? new Notifications(this._island, () => this._settings.get_string('privacy')) : null;
     }
 
     _buildPills() {

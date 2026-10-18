@@ -5,8 +5,9 @@ import {notificationEvent} from './lib/notifications.js';
 // Shows app notifications on the island instead of in GNOME's banner. They stay in the message list.
 // If anything below fails, the banner is left alone, so a notification is never lost.
 export class Notifications {
-    constructor(island) {
+    constructor(island, level) {
         this._island = island;
+        this._level = level;   // a function, so a change in settings applies to the next notification
         this._sources = new Map();
         const tray = Main.messageTray;
         try {
@@ -38,7 +39,7 @@ export class Notifications {
     }
 
     _show(source, notification) {
-        const event = notificationEvent(notification, source.title);
+        const event = notificationEvent(notification, source.title, this._level());
         if (!event)
             return;
         // GNOME skips acknowledged notifications, so nothing queues up behind the blocked banner

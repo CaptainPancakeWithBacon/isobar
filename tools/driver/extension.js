@@ -503,6 +503,30 @@ export default class Driver extends Extension {
         expect('and still no GNOME banner', banner(), 'false');
         await sleep(10500);
 
+        // privacy: the toggle in quick settings cycles all -> title -> app, and only app notifications are held back
+        const toggle = ext()._privacyToggle;
+        expect('quick settings has a privacy toggle', String(!!toggle), 'true');
+        expect('it starts on everything', ext()._settings.get_string('privacy'), 'all');
+        toggle?.emit('clicked', 0);
+        expect('one click shows titles only', ext()._settings.get_string('privacy'), 'title');
+        await notify('-a', 'Mail', 'Salary letter', 'Your raise is 12%');
+        await sleep(900);
+        expect('the title still shows', String(isl().shown?.title), 'Salary letter');
+        expect('the text does not', String(isl().shown?.subtitle), 'Mail');
+        await sleep(4500);
+        toggle?.emit('clicked', 0);
+        expect('a second click shows the app name only', ext()._settings.get_string('privacy'), 'app');
+        await notify('-a', 'Mail', 'Salary letter 2', 'Your raise is 13%');
+        await sleep(900);
+        expect('the island names only the app', `${isl().shown?.title}|${isl().shown?.subtitle}`, 'Mail|');
+        await sleep(4500);
+        await this._gdbus('Show', 'Claude needs you', 'isobar', 'needs', 5);
+        await sleep(900);
+        expect('events you sent yourself stay readable', `${isl().shown?.title}|${isl().shown?.subtitle}`, 'Claude needs you|isobar');
+        await sleep(5500);
+        toggle?.emit('clicked', 0);
+        expect('a third click is back to everything', ext()._settings.get_string('privacy'), 'all');
+
         ext()._settings.set_boolean('replace-banners', false);
         await sleep(300);
         await notify('-a', 'Mail', 'Second message', 'From Ben');

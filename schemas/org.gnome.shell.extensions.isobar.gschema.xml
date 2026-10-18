@@ -12,6 +12,16 @@
       <summary>Redraws per second at rest</summary>
       <description>How often the terrain redraws while nothing is moving. 0 keeps it still until something happens. Ripples and changes always run at full speed.</description>
     </key>
+    <key name="privacy" type="s">
+      <choices>
+        <choice value="all"/>
+        <choice value="title"/>
+        <choice value="app"/>
+      </choices>
+      <default>"all"</default>
+      <summary>How much a notification shows on the island</summary>
+      <description>all: title and text. title: the title and the app name. app: only the app name. Events you send to the island yourself are always shown in full.</description>
+    </key>
     <key name="replace-banners" type="b">
       <default>true</default>
       <summary>Show notifications on the island</summary>

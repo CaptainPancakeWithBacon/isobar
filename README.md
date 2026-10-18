@@ -59,6 +59,8 @@ How often the terrain redraws while nothing moves, from 0 to 30 (default 10). At
 dconf write /org/gnome/shell/extensions/isobar/idle-fps 5
 ```
 
+The **Palette** menu in quick settings (or the `palette` key) picks the colours of the terrain, the bar, the menus and the island: mint (the default), sand, sky, blush or stone. All are light. The colours live in [`lib/palettes.js`](lib/palettes.js); the stylesheets in `palettes/` are generated from it with `gjs -m tools/gen-palettes.js`, and a test fails if they drift apart.
+
 Focus is the toggle in quick settings. It is stored in `/org/gnome/shell/extensions/isobar/focus`.
 
 ## The island
@@ -109,6 +111,7 @@ gjs -m tests/terrain.test.js
 gjs -m tests/island.test.js
 gjs -m tests/notifications.test.js
 gjs -m tests/music.test.js
+gjs -m tests/palettes.test.js
 python3 hooks/test_relay.py
 ```
 

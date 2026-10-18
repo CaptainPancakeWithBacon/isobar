@@ -7,6 +7,7 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {idleInterval, clockStep, FRAME_MS} from './lib/terrain.js';
+import {PALETTES, DEFAULT, rgb} from './lib/palettes.js';
 
 const SEEDS = [[0, 0], [2.3, 1.1], [4.1, 3.7], [1.2, 5.4]];
 const MAX_RIPPLES = 4;    // the shader takes four at a time
@@ -22,6 +23,9 @@ uniform float uSy;
 uniform float uCalm;
 uniform float uW;
 uniform float uH;
+uniform float uGr; uniform float uGg; uniform float uGb;   // ground
+uniform float uNr; uniform float uNg; uniform float uNb;   // minor lines
+uniform float uJr; uniform float uJg; uniform float uJb;   // major lines
 uniform float uR0x; uniform float uR0y; uniform float uR0a; uniform float uR0t;
 uniform float uR1x; uniform float uR1y; uniform float uR1a; uniform float uR1t;
 uniform float uR2x; uniform float uR2y; uniform float uR2a; uniform float uR2t;
@@ -54,8 +58,8 @@ void main() {
     float major = (mod(n, 4.0) < 0.5) ? 1.0 : 0.0;
     float half_ = mix(0.5, 0.9, major);        // line half width in px, 
     float a = clamp(half_ + 0.5 - distPx, 0.0, 1.0) * step(-0.5, n) * step(n, 12.5);
-    vec3 ground = vec3(0.7843, 0.8784, 0.8471);
-    vec3 line = mix(vec3(0.6118, 0.7765, 0.7333), vec3(0.4353, 0.6510, 0.5961), major);
+    vec3 ground = vec3(uGr, uGg, uGb);
+    vec3 line = mix(vec3(uNr, uNg, uNb), vec3(uJr, uJg, uJb), major);
     cogl_color_out = vec4(mix(ground, line, a), 1.0);
 }
 `;
@@ -90,17 +94,24 @@ class BaseLayer {
 
 // A fragment shader draws the lines; JS only passes a handful of numbers per frame.
 class ShaderLayer extends BaseLayer {
-    constructor(monitor) {
+    constructor(monitor, palette) {
         super(monitor);
         this.actor = new St.Widget({
             style_class: 'isobar-terrain', reactive: false,
             x: monitor.x, y: monitor.y, width: monitor.width, height: monitor.height,
-            style: 'background-color: #C8E0D8;',
         });
         this.effect = new TerrainEffect();
         this.actor.add_effect_with_name('isobar-terrain', this.effect);
         this.effect.set('uW', monitor.width);
         this.effect.set('uH', monitor.height);
+        this.setColors(palette);
+    }
+
+    setColors({ground, minor, major}) {
+        this.actor.set_style(`background-color: ${ground};`);   // what shows before the first frame
+        for (const [prefix, hex] of [['G', ground], ['N', minor], ['J', major]])
+            rgb(hex).forEach((v, i) => this.effect.set(`u${prefix}${'rgb'[i]}`, v));
+        this.effect.queue_repaint();
     }
 
     update(state) {
@@ -135,6 +146,7 @@ export class Terrain {
         this._seedTarget = SEEDS[0];
         this._calm = 1;
         this._calmTarget = 1;
+        this._palette = PALETTES[DEFAULT];
         this._build();
         this._monitorsId = Main.layoutManager.connect('monitors-changed', () => this._build());
         this._coverTimer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, COVER_MS, () => {
@@ -187,6 +199,11 @@ export class Terrain {
         this._wake();
     }
 
+    setPalette(name) {
+        this._palette = PALETTES[name] ?? PALETTES[DEFAULT];
+        this.layers.forEach(layer => layer.setColors(this._palette));
+    }
+
     /** Freeze at a given moment (ms since start), settled on the current workspace. */
     pause(at) {
         this._pausedAt = at;
@@ -217,7 +234,7 @@ export class Terrain {
     _build() {
         this.layers.forEach(l => l.destroy());
         this.layers = Main.layoutManager.monitors.map(monitor => {
-            const layer = new ShaderLayer(monitor);
+            const layer = new ShaderLayer(monitor, this._palette);
             Main.layoutManager._backgroundGroup.add_child(layer.actor);
             return layer;
         });

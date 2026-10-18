@@ -1,11 +1,3 @@
-#panel {
-    background-color: #0F2F33;
-}
-
-#panel .panel-button {
-    color: #EAF4F0;
-}
-
 .isobar-pill {
     padding: 0 5px;
     min-height: 24px;
@@ -14,71 +6,20 @@
 .isobar-dot {
     height: 8px;
     border-radius: 4px;
-    background-color: #6E9A97;
-}
-
-.isobar-pill:hover .isobar-dot,
-.isobar-dot-active {
-    background-color: #EAF4F0;
 }
 
 .isobar-meta {
     padding: 0 10px;
     height: 24px;
     border-radius: 12px;
-    color: #EAF4F0;
     font-size: 12px;
     font-weight: 500;
     spacing: 14px;
 }
 
-.isobar-meta:hover,
-.isobar-meta:focus {
-    background-color: #1F4A4F;
-}
-
 /* quick settings */
 .quick-settings {
-    background-color: #0F2F33;
-    color: #EAF4F0;
     border-radius: 22px;
-}
-
-.quick-settings .quick-toggle,
-.quick-settings .icon-button {
-    background-color: #1F4A4F;
-    color: #EAF4F0;
-}
-
-.quick-settings .quick-toggle:hover,
-.quick-settings .icon-button:hover,
-.quick-settings .quick-toggle:focus,
-.quick-settings .icon-button:focus {
-    background-color: #2A6066;
-}
-
-.quick-settings .quick-toggle:checked,
-.quick-settings .quick-toggle-arrow:checked {
-    background-color: #EAF4F0;
-    color: #0F2F33;
-}
-
-.quick-settings .quick-toggle:checked:hover,
-.quick-settings .quick-toggle-arrow:checked:hover {
-    background-color: #FFFFFF;
-}
-
-.quick-settings .icon-button.flat {
-    background-color: transparent;
-    color: #EAF4F0;
-}
-
-.quick-settings .slider {
-    color: #EAF4F0;
-    -barlevel-background-color: #1F4A4F;
-    -barlevel-border-color: #1F4A4F;
-    -barlevel-active-background-color: #EAF4F0;
-    -barlevel-active-border-color: #EAF4F0;
 }
 
 .quick-settings .quick-toggle-arrow {
@@ -87,23 +28,16 @@
 
 /* the island */
 .isobar-island {
-    background-color: #EAF4F0;
     border-radius: 28px;
     padding: 16px 28px 0 28px;
 }
 
-.isobar-island-open {
-    background-color: #0F2F33;
-}
-
 .isobar-island-title {
-    color: #EAF4F0;
     font-family: 'Big Shoulders Display', 'Ubuntu Condensed', Oswald, 'Arial Narrow', sans-serif;
     font-weight: 800;
     font-size: 28px;
 }
 
 .isobar-island-sub {
-    color: #9DBDB8;
     font-size: 12px;
 }

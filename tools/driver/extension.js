@@ -140,6 +140,12 @@ export default class Driver extends Extension {
             await sleep(1200);
             return this._checkNotifications();
         }
+        if (GLib.getenv('ISOBAR_ONLY') === 'palette') {
+            await sleep(5000);
+            Main.overview.hide();
+            await sleep(1200);
+            return this._checkPalette();
+        }
         if (GLib.getenv('ISOBAR_ONLY') === 'agents') {
             await sleep(5000);
             Main.overview.hide();
@@ -215,6 +221,7 @@ export default class Driver extends Extension {
         await this._checkMusic();
         await this._checkIslandPointer();
         await this._checkAgents();
+        await this._checkPalette();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -526,6 +533,58 @@ export default class Driver extends Extension {
         Main.extensionManager.enableExtension(uuid);
         await sleep(1500);
         expect('a song while Isobar is off is not heard, and nothing breaks', String(isl().shown), 'null');
+    }
+
+    // Every palette: the bar, the island and the terrain take its colours, and switching back and forth leaves nothing behind
+    async _checkPalette() {
+        const uuid = 'isobar@gijs.dev';
+        const ext = () => Main.extensionManager.lookup(uuid).stateObj;
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        const hex = c => '#' + [c.red, c.green, c.blue].map(v => v.toString(16).padStart(2, '0')).join('');
+        const bg = a => hex(a.get_theme_node().get_background_color());
+        const {PALETTES, NAMES} = await import(`file://${GLib.getenv('ROOT')}/lib/palettes.js`);
+        const settings = ext()._settings;
+        const toggle = ext()._paletteToggle;
+        expect('quick settings has a palette menu', String(!!toggle), 'true');
+        for (const name of NAMES) {
+            const p = PALETTES[name];
+            settings.set_string('palette', name);
+            await sleep(900);
+            const low = s => s.toLowerCase();
+            expect(`${name}: the bar is its ink`, low(bg(Main.panel)), low(p.ink));
+            expect(`${name}: the resting island is its paper`, low(bg(ext()._island.actor)), low(p.paper));
+            expect(`${name}: the terrain has its ground`, low(ext()._terrain._palette.ground), low(p.ground));
+            expect(`${name}: the menu shows it as current`, toggle.subtitle.toLowerCase(), name);
+            await screenshot(`10-palette-${name}`);
+        }
+        // the list opens inside quick settings and reads well on its ink
+        Main.panel.statusArea.quickSettings.menu.open();
+        await sleep(700);
+        toggle.emit('clicked', 0);
+        await sleep(900);
+        expect('a click on the toggle opens the palette list', String(toggle.menu.isOpen), 'true');
+        await screenshot('10-palette-menu');
+        toggle.menu.close();
+        Main.panel.statusArea.quickSettings.menu.close();
+        await sleep(500);
+        // choosing from the menu works like the setting
+        const item = toggle._items.get('sand');
+        item.emit('activate', null);
+        await sleep(500);
+        expect('choosing sand in the menu sets it', settings.get_string('palette'), 'sand');
+        settings.set_string('palette', 'mint');
+        await sleep(600);
+        // turning Isobar off takes its colours away again, and on brings the chosen ones back
+        const panelBefore = bg(Main.panel);
+        Main.extensionManager.disableExtension(uuid);
+        await sleep(1200);
+        expect('with Isobar off the bar is not its ink any more', String(bg(Main.panel) !== panelBefore), 'true');
+        settings.set_string('palette', 'sky');
+        Main.extensionManager.enableExtension(uuid);
+        await sleep(1500);
+        expect('turning it on brings back the chosen palette', bg(Main.panel).toLowerCase(), PALETTES.sky.ink.toLowerCase());
+        settings.set_string('palette', 'mint');
+        await sleep(600);
     }
 
     // An agent's hook runs the relay, exactly as Claude Code would: JSON on stdin

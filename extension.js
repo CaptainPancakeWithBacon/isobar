@@ -6,7 +6,8 @@ import St from 'gi://St';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import {QuickToggle, SystemIndicator} from 'resource:///org/gnome/shell/ui/quickSettings.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import {QuickToggle, QuickMenuToggle, SystemIndicator} from 'resource:///org/gnome/shell/ui/quickSettings.js';
 
 import {workspacePills, formatDate, batteryLabel} from './lib/bar.js';
 import {Terrain} from './terrain-layer.js';
@@ -14,6 +15,7 @@ import {Island} from './island.js';
 import {Notifications} from './notifications.js';
 import {Music} from './music.js';
 import {nextPrivacy} from './lib/notifications.js';
+import {NAMES} from './lib/palettes.js';
 
 const DOT = 8;
 const LONG = 28;
@@ -45,6 +47,29 @@ const PrivacyToggle = GObject.registerClass(class IsobarPrivacyToggle extends Qu
     }
 });
 
+// Choose the colours of everything Isobar draws. A click opens the list.
+const PaletteToggle = GObject.registerClass(class IsobarPaletteToggle extends QuickMenuToggle {
+    _init(settings) {
+        super._init({title: 'Palette', iconName: 'applications-graphics-symbolic', toggleMode: false});
+        this.menu.setHeader('applications-graphics-symbolic', 'Palette');
+        this._items = new Map(NAMES.map(name => {
+            const item = new PopupMenu.PopupMenuItem(name[0].toUpperCase() + name.slice(1));
+            item.connect('activate', () => settings.set_string('palette', name));
+            this.menu.addMenuItem(item);
+            return [name, item];
+        }));
+        const sync = () => {
+            const current = settings.get_string('palette');
+            this.subtitle = current[0].toUpperCase() + current.slice(1);
+            this._items.forEach((item, name) => item.setOrnament(name === current ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NONE));
+        };
+        this.connect('clicked', () => this.menu.open());
+        const id = settings.connect('changed::palette', sync);
+        this.connect('destroy', () => settings.disconnect(id));
+        sync();
+    }
+});
+
 // Focus calms the terrain; ripples from events still show.
 const FocusToggle = GObject.registerClass(class IsobarFocusToggle extends QuickToggle {
     _init(checked, onChange) {
@@ -69,6 +94,8 @@ export default class Isobar extends Extension {
             this._terrain.setIdleFps(this._settings.get_int('idle-fps'));
         });
         this._music = new Music(this._island);
+        this._applyPalette();
+        this._paletteId = this._settings.connect('changed::palette', () => this._applyPalette());
         this._syncBanners();
         this._bannersId = this._settings.connect('changed::replace-banners', () => this._syncBanners());
         const focusOn = this._settings.get_boolean('focus');
@@ -82,7 +109,8 @@ export default class Isobar extends Extension {
         });
         this._focus = new SystemIndicator();
         this._privacyToggle = new PrivacyToggle(this._settings);
-        this._focus.quickSettingsItems.push(focusToggle, this._privacyToggle);
+        this._paletteToggle = new PaletteToggle(this._settings);
+        this._focus.quickSettingsItems.push(focusToggle, this._privacyToggle, this._paletteToggle);
         panel.statusArea.quickSettings.addExternalIndicator(this._focus);
 
         this._hidden = [panel.statusArea.activities, panel.statusArea.dateMenu];
@@ -144,6 +172,9 @@ export default class Isobar extends Extension {
             this._settings.disconnect(this._focusId);
         if (this._bannersId)
             this._settings.disconnect(this._bannersId);
+        if (this._paletteId)
+            this._settings.disconnect(this._paletteId);
+        this._unloadPalette();
         this._notifications?.destroy();
         this._music?.destroy();
         if (this._idleFpsId)
@@ -161,7 +192,24 @@ export default class Isobar extends Extension {
         this._pills?.destroy();
         this._meta?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._music = this._privacyToggle = this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+        this._paletteId = this._paletteToggle = this._music = this._privacyToggle = this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+    }
+
+    // The colours of the bar, menus and island come from palettes/<name>.css; the terrain takes them from the same data
+    _applyPalette() {
+        const name = this._settings.get_string('palette');
+        const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
+        this._unloadPalette();
+        this._paletteFile = Gio.File.new_for_path(`${this.path}/palettes/${name}.css`);
+        theme.load_stylesheet(this._paletteFile);
+        this._terrain.setPalette(name);
+    }
+
+    _unloadPalette() {
+        if (!this._paletteFile)
+            return;
+        St.ThemeContext.get_for_stage(global.stage).get_theme().unload_stylesheet(this._paletteFile);
+        this._paletteFile = null;
     }
 
     _syncBanners() {

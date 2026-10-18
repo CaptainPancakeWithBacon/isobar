@@ -71,7 +71,7 @@ gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell/Exten
 
 The arguments are a title, a subtitle, a kind (`needs`, `error`, `done` or `info`) and the number of seconds (0 for the default of that kind). A more important kind takes over once the current event has been shown for 1.5 seconds; the others queue, up to eight. Titles are cut at 60 characters and subtitles at 90. The ripple grows with the kind.
 
-For now it only shows what is sent to it. Notifications from apps, music, hover, a privacy switch and hooks for AI agents are planned, see [`docs/design.md`](docs/design.md). The island is new: it has automated checks but has not been used on a real desktop for any length of time. The title uses Big Shoulders Display if it is installed, then a condensed system font, then the default font; an extension cannot load a font of its own.
+App notifications open the island instead of GNOME's banner and stay in the message list. Critical ones count as "needs you", low-urgency ones stay off the island, as GNOME shows no banner for them either. Set `replace-banners` to false (`dconf write /org/gnome/shell/extensions/isobar/replace-banners false`) to get GNOME's banners back. Music, hover, a privacy switch and hooks for AI agents are planned, see [`docs/design.md`](docs/design.md). The island is new: it has automated checks but has not been used on a real desktop for any length of time. The title uses Big Shoulders Display if it is installed, then a condensed system font, then the default font; an extension cannot load a font of its own.
 
 ## Uninstall
 

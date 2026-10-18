@@ -12,5 +12,10 @@
       <summary>Redraws per second at rest</summary>
       <description>How often the terrain redraws while nothing is moving. 0 keeps it still until something happens. Ripples and changes always run at full speed.</description>
     </key>
+    <key name="replace-banners" type="b">
+      <default>true</default>
+      <summary>Show notifications on the island</summary>
+      <description>App notifications open the island instead of GNOME's banner. They stay in the message list. Turn off to get GNOME's banners back.</description>
+    </key>
   </schema>
 </schemalist>

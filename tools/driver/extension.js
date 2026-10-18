@@ -134,6 +134,12 @@ export default class Driver extends Extension {
             await sleep(1200);
             return this._checkIsland();
         }
+        if (GLib.getenv('ISOBAR_ONLY') === 'notifications') {
+            await sleep(5000);
+            Main.overview.hide();
+            await sleep(1200);
+            return this._checkNotifications();
+        }
         if (GLib.getenv('ISOBAR_BENCH'))
             return this._bench();
         await sleep(4000);
@@ -187,6 +193,7 @@ export default class Driver extends Extension {
         await this._checkEfficiency();
         await this._checkIdleRates();
         await this._checkIsland();
+        await this._checkNotifications();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -461,6 +468,61 @@ export default class Driver extends Extension {
         Main.extensionManager.enableExtension(uuid);
         await sleep(1500);
         expect('the island comes back with the extension', String(!!ext()._island), 'true');
+    }
+
+    // An app sends a notification like any app would; the island shows it and GNOME's own banner stays away
+    async _checkNotifications() {
+        const uuid = 'isobar@gijs.dev';
+        const ext = () => Main.extensionManager.lookup(uuid).stateObj;
+        const isl = () => ext()._island;
+        const terrain = () => ext()._terrain;
+        const tray = Main.messageTray;
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        const notify = (...args) => new Promise(resolve => {
+            const proc = Gio.Subprocess.new(['notify-send', ...args], Gio.SubprocessFlags.STDERR_MERGE);
+            proc.wait_async(null, () => resolve());
+        });
+        // true while GNOME's own banner is on screen or on its way
+        const banner = () => String(tray._notificationState !== 0 || tray._banner !== null && tray._banner !== undefined);
+        const inTray = title => String(tray.getSources().some(s => s.notifications.some(n => n.title === title)));
+
+        await sleep(800);
+        await notify('-a', 'Mail', 'New message', 'From Anna');
+        await sleep(900);
+        expect('an app notification opens the island with its title', String(isl().shown?.title), 'New message');
+        expect('the island says which app it came from', String(/Mail/.test(isl().shown?.subtitle)), 'true');
+        expect('GNOME shows no banner of its own', banner(), 'false');
+        expect('the notification is still in the message list', inTray('New message'), 'true');
+        await screenshot('08-island-notification');
+        await sleep(4500);
+
+        await notify('-a', 'Backup', '-u', 'critical', 'Disk almost full');
+        await sleep(900);
+        expect('a critical notification is an event that needs you', String(terrain()._ripples.some(r => r.amp === 2.4)), 'true');
+        expect('and the island shows it', String(isl().shown?.title), 'Disk almost full');
+        expect('and still no GNOME banner', banner(), 'false');
+        await sleep(10500);
+
+        ext()._settings.set_boolean('replace-banners', false);
+        await sleep(300);
+        await notify('-a', 'Mail', 'Second message', 'From Ben');
+        await sleep(900);
+        expect('with replace-banners off GNOME shows its banner', banner(), 'true');
+        expect('and the island stays closed', String(isl().shown), 'null');
+        // GNOME keeps a banner while the pointer rests on it, so close it by hand: a leftover must not pass for a flood
+        tray._hideNotification(true);
+        for (let i = 0; i < 20 && banner() === 'true'; i++)
+            await sleep(250);
+        expect('the banner of the previous step is gone', banner(), 'false');
+        ext()._settings.set_boolean('replace-banners', true);
+
+        Main.extensionManager.disableExtension(uuid);
+        await sleep(1200);
+        expect('turning Isobar off gives GNOME its banners back', String(tray._bannerBlocked), 'false');
+        expect('and does not unleash the notifications it showed', banner(), 'false');
+        Main.extensionManager.enableExtension(uuid);
+        await sleep(1500);
+        expect('and turning it on hides them again', String(tray._bannerBlocked), 'true');
     }
 
     // Cost per renderer at the same redraw rate: nothing, cairo, shader.

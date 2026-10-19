@@ -17,7 +17,8 @@ void main() {
     vec4 c = texture2D(tex, cogl_tex_coord_in[0].xy);
     vec3 base = c.a > 0.0 ? c.rgb / c.a : c.rgb;
     float l = dot(base, vec3(0.2126, 0.7152, 0.0722));
-    cogl_color_out = vec4(mix(vec3(uDr, uDg, uDb), vec3(uLr, uLg, uLb), l) * c.a, c.a);
+    float t = 0.12 + 0.88 * smoothstep(0.08, 0.92, l);   // the same curve and floor as tone() in lib/duotone.js
+    cogl_color_out = vec4(mix(vec3(uDr, uDg, uDb), vec3(uLr, uLg, uLb), t) * c.a, c.a);
 }
 `;
 

@@ -16,6 +16,7 @@ import {Notifications} from './notifications.js';
 import {Music} from './music.js';
 import {Coucou} from './coucou.js';
 import {Duotone} from './duotone.js';
+import {CalmSpace} from './focus.js';
 import {nextPrivacy} from './lib/notifications.js';
 import {NAMES} from './lib/palettes.js';
 
@@ -79,7 +80,11 @@ const PaletteToggle = GObject.registerClass(class IsobarPaletteToggle extends Qu
 const FocusToggle = GObject.registerClass(class IsobarFocusToggle extends QuickToggle {
     _init(path, checked, onChange) {
         super._init({title: 'Focus', gicon: icon(path, 'focus'), toggleMode: true, checked});
-        this.connect('notify::checked', () => onChange(this.checked));
+        this.connect('notify::checked', () => {
+            this.subtitle = this.checked ? 'Quiet' : '';
+            onChange(this.checked);
+        });
+        this.subtitle = checked ? 'Quiet' : '';
     }
 });
 
@@ -105,15 +110,15 @@ export default class Isobar extends Extension {
         this._syncCoucou();   // also starts notifications and music, unless Coucou is there
         this._coucouId = this._settings.connect('changed::coucou-aware', () => this._syncCoucou());
         this._bannersId = this._settings.connect('changed::replace-banners', () => this._syncBanners());
+        // Focus is a calm space: a calm terrain, a quiet island and notifications, no tray icons, a dimmed dock
+        this._calmSpace = new CalmSpace();
         const focusOn = this._settings.get_boolean('focus');
-        this._terrain.setCalm(focusOn, true);
-        const focusToggle = this._focusToggle = new FocusToggle(this.path, focusOn, on => {
-            this._settings.set_boolean('focus', on);
-            this._terrain.setCalm(on);
-        });
+        const focusToggle = this._focusToggle = new FocusToggle(this.path, focusOn, on => this._settings.set_boolean('focus', on));
         this._focusId = this._settings.connect('changed::focus', () => {
             focusToggle.checked = this._settings.get_boolean('focus');
+            this._applyFocus(false);
         });
+        this._applyFocus(true);
         this._focus = new SystemIndicator();
         this._privacyToggle = new PrivacyToggle(this.path, this._settings);
         this._paletteToggle = new PaletteToggle(this.path, this._settings);
@@ -186,6 +191,7 @@ export default class Isobar extends Extension {
         if (this._duotoneId)
             this._settings.disconnect(this._duotoneId);
         this._unloadPalette();
+        this._calmSpace?.destroy();
         this._duotone?.destroy();
         this._coucou?.destroy();
         this._notifications?.destroy();
@@ -205,7 +211,7 @@ export default class Isobar extends Extension {
         this._pills?.destroy();
         this._meta?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._duotone = this._duotoneId = this._focusToggle = this._coucou = this._coucouAt = this._coucouId = this._paletteId = this._paletteToggle = this._music = this._privacyToggle = this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+        this._calmSpace = this._duotone = this._duotoneId = this._focusToggle = this._coucou = this._coucouAt = this._coucouId = this._paletteId = this._paletteToggle = this._music = this._privacyToggle = this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
     }
 
     // The colours of the bar, menus and island come from palettes/<name>.css; the terrain takes them from the same data
@@ -224,6 +230,14 @@ export default class Isobar extends Extension {
             return;
         St.ThemeContext.get_for_stage(global.stage).get_theme().unload_stylesheet(this._paletteFile);
         this._paletteFile = null;
+    }
+
+    _applyFocus(immediately) {
+        const on = this._settings.get_boolean('focus');
+        this._terrain.setCalm(on, immediately);
+        this._island.setQuiet(on);
+        this._calmSpace.setActive(on);
+        this._syncBanners();
     }
 
     _syncDuotone() {
@@ -255,7 +269,10 @@ export default class Isobar extends Extension {
 
     _syncBanners() {
         this._notifications?.destroy();
-        this._notifications = this._settings.get_boolean('replace-banners') && !this._coucouAt ? new Notifications(this._island, () => this._settings.get_string('privacy')) : null;
+        // Isobar handles notifications when it shows them on the island, and in Focus to keep GNOME's banner quiet
+        const handle = (this._settings.get_boolean('replace-banners') || this._settings.get_boolean('focus')) && !this._coucouAt;
+        this._notifications = handle ? new Notifications(this._island, () => this._settings.get_string('privacy'),
+            () => this._settings.get_boolean('replace-banners')) : null;
     }
 
     _buildPills() {

@@ -39,7 +39,8 @@ GNOME is calm but plain, and most shell themes only repaint it. Isobar changes w
 
 - 🎨 **Five light palettes**, picked from a menu in quick settings: mint, sand, sky, blush and stone. They change the terrain, bar, menus and island together.
 - 🐣 **Coucou-aware.** If [Coucou](#coucou) is running, the terrain builds a summit under it and Isobar's own island steps aside, so nothing shows twice.
-- 🗺️ **A contour desktop.** A shader draws the lines behind your windows. The terrain drifts slowly, ripples when you switch workspace or open quick settings, and calms down in Focus mode.
+- 🗺️ **A contour desktop.** A shader draws the lines behind your windows. The terrain drifts slowly and ripples when you switch workspace or open quick settings.
+- 🌫️ **Focus is a calm space.** One toggle: the terrain calms to a third of its strength, the island only opens for what needs you or has failed, normal notifications wait quietly in the message list (GNOME's banner stays away too), tray icons step out of sight, and the dock dims until you point at it. Everything comes back when you turn it off.
 - 📏 **A different bar.** Workspace pills on the left (the current one is long), date and battery as one button that opens quick settings.
 - 🎞️ **Duotone icons.** The icons in the Ubuntu Dock and in tray icons (AppIndicator and similar) are drawn in the palette's two colours, so every app keeps its shape and nothing clashes. Switch it off to get the apps' own colours back.
 - 🖤 **Quick settings in ink and paper**, with Focus, Privacy and Palette toggles.
@@ -144,7 +145,9 @@ One small relay ([`hooks/relay.py`](hooks/relay.py)) turns an agent's hook into 
 | Click **Privacy** twice, then send the same notification | only the app name shows |
 | Start a song in any media player | title and artist on the island |
 | Switch workspace | the terrain ripples and settles into a new landscape |
-| Turn on **Focus** | the terrain calms to a third of its strength; ripples still show |
+| Turn on **Focus**, then send a normal notification | nothing opens, the message waits in the list |
+| Turn on **Focus**, then send a critical one | it still gets through |
+| Turn on **Focus** and move the pointer onto the dock | the dock lights up while you are on it |
 | Open a maximised window | the terrain stops drawing |
 
 ## How it works
@@ -184,7 +187,7 @@ mkdir -p /tmp/isobar-run
 ISOBAR_HEADLESS=1 ISOBAR_DRIVER_OUT=/tmp/isobar-run tools/nested.sh --drive
 ```
 
-It needs `gnome-shell` 46, `gjs`, GTK 4, Python 3 with Pillow, and takes about three minutes. Without `ISOBAR_HEADLESS` it opens a nested window instead, but then your own mouse can disturb the clicks. `tools/measure.sh` averages GPU use, battery power and shell CPU over a number of seconds, and changes nothing.
+It needs `gnome-shell` 46, `gjs`, GTK 4, Python 3 with Pillow, and takes about five minutes. Without `ISOBAR_HEADLESS` it opens a nested window instead, but then your own mouse can disturb the clicks. `tools/measure.sh` averages GPU use, battery power and shell CPU over a number of seconds, and changes nothing.
 
 `tools/pack.sh` builds the zip for extensions.gnome.org and checks what is in it; what is left before a release is in [`docs/releasing.md`](docs/releasing.md).
 

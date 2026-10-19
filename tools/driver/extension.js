@@ -141,6 +141,12 @@ export default class Driver extends Extension {
             await sleep(1200);
             return this._checkNotifications();
         }
+        if (GLib.getenv('ISOBAR_ONLY') === 'calm') {
+            while (Main.layoutManager._startingUp)
+                await sleep(500);
+            await sleep(3000);
+            return this._checkFocusCalm();
+        }
         if (GLib.getenv('ISOBAR_ONLY') === 'duotone') {
             while (Main.layoutManager._startingUp)
                 await sleep(500);
@@ -252,6 +258,7 @@ export default class Driver extends Extension {
         await this._checkCoucou();
         await this._checkIcons();
         await this._checkDuotone();
+        await this._checkFocusCalm();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -646,6 +653,95 @@ export default class Driver extends Extension {
         expect('and so is the music listener', String(!!ext()._music), 'true');
         await sleep(2500);
         expect('the summit has sunk away', String(ext()._terrain._peak), 'null');
+    }
+
+    // Focus is a calm space, not only a calm terrain: quiet notifications and island, no tray, a dimmed dock
+    async _checkFocusCalm() {
+        const uuid = 'isobar@gijs.dev';
+        const ext = () => Main.extensionManager.lookup(uuid).stateObj;
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        const tray = Main.messageTray;
+        const settings = () => ext()._settings;
+        const notify = (...args) => new Promise(resolve => Gio.Subprocess.new(['notify-send', ...args], Gio.SubprocessFlags.STDERR_MERGE).wait_async(null, () => resolve()));
+        const banner = () => String(tray._notificationState !== 0);
+        const inList = title => String(tray.getSources().some(s => s.notifications.some(n => n.title === title)));
+        const dock = () => Main.layoutManager.uiGroup.get_children().find(a => a.name === 'dashtodockContainer');
+        const mon = Main.layoutManager.primaryMonitor;
+
+        // a stand-in tray icon
+        const fake = new PanelMenu.Button(0, 'isobar-fake-tray', true);
+        fake.add_child(new St.Widget({style: 'background-color: #ff0000; width: 22px; height: 22px;'}));
+        Main.panel.addToStatusArea('appindicator-isobar-focus-fake', fake, 0, 'right');
+        await sleep(800);
+        expect('before Focus the tray icon shows', String(fake.container.visible), 'true');
+        expect('and the dock is fully opaque', String(dock()?.opacity), '255');
+
+        settings().set_boolean('focus', true);
+        await sleep(1200);
+        expect('Focus on: the toggle says it is quiet', ext()._focusToggle.subtitle, 'Quiet');
+        expect('the tray icon is hidden', String(fake.container.visible), 'false');
+        expect('the dock is dimmed', String(dock().opacity < 255), 'true');
+
+        await notify('-a', 'Mail', 'Quiet message', 'From Anna');
+        await sleep(900);
+        expect('a normal notification stays off the island', String(ext()._island.shown), 'null');
+        expect('and gets no GNOME banner', banner(), 'false');
+        expect('but is in the message list', inList('Quiet message'), 'true');
+
+        await notify('-a', 'Backup', '-u', 'critical', 'Disk almost full');
+        await sleep(900);
+        expect('a critical one still gets through', String(ext()._island.shown?.title), 'Disk almost full');
+        await sleep(10500);
+
+        await this._gdbus('Show', 'Song', 'Artist', 'info', 3);
+        await sleep(600);
+        expect('an info event is held back', String(ext()._island.shown), 'null');
+        await this._gdbus('Show', 'Claude needs you', '', 'needs', 3);
+        await sleep(900);
+        expect('one that needs you is not', String(ext()._island.shown?.title), 'Claude needs you');
+        await sleep(4000);
+
+        // with the island not used, GNOME's own banner must be quiet too
+        settings().set_boolean('replace-banners', false);
+        await sleep(500);
+        await notify('-a', 'Mail', 'Quiet banner test', 'From Ben');
+        await sleep(900);
+        expect('with replace-banners off, Focus still keeps GNOME\'s banner away', banner(), 'false');
+        expect('and the message is in the list', inList('Quiet banner test'), 'true');
+
+        // the pointer brings the dock back while you are on it
+        await this._point(mon.x + 30, mon.y + 400);
+        await sleep(900);
+        expect('on the dock the dock is fully opaque again', String(dock().opacity), '255');
+        await this._point(mon.x + 700, mon.y + 400);
+        await sleep(900);
+        expect('and dims again when the pointer leaves', String(dock().opacity < 255), 'true');
+
+        settings().set_boolean('focus', false);
+        await sleep(1200);
+        expect('Focus off: the tray icon is back', String(fake.container.visible), 'true');
+        expect('the dock is opaque again', String(dock().opacity), '255');
+        expect('the toggle is not quiet any more', ext()._focusToggle.subtitle === 'Quiet' ? 'quiet' : 'ok', 'ok');
+        await notify('-a', 'Mail', 'Back to normal', 'Hello');
+        await sleep(900);
+        expect('with replace-banners still off GNOME shows its banner again', banner(), 'true');
+        tray._hideNotification(true);
+        settings().set_boolean('replace-banners', true);
+        await sleep(600);
+
+        // turning Isobar off while Focus is on puts everything back
+        const kept = settings();   // the extension drops its own once it is off
+        kept.set_boolean('focus', true);
+        await sleep(900);
+        Main.extensionManager.disableExtension(uuid);
+        await sleep(1200);
+        expect('with Isobar off the tray icon is back', String(fake.container.visible), 'true');
+        expect('the dock is opaque', String(dock().opacity), '255');
+        expect('and banners are not blocked', String(tray._bannerBlocked), 'false');
+        kept.set_boolean('focus', false);
+        Main.extensionManager.enableExtension(uuid);
+        await sleep(1500);
+        fake.destroy();
     }
 
     // App icons in the dock and the tray come out in the palette's two colours, and everything is put back when it is off

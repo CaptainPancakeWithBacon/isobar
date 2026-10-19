@@ -38,7 +38,7 @@ dbus-run-session -- bash -c '
     [ -e "$ISOBAR_DRIVER_OUT/done" ] || { echo "FAIL the driver did not finish within 240 s"; exit 1; }
     ! grep -q FAIL "$ISOBAR_DRIVER_OUT/driver.log" || exit 1
     # the benchmark takes no screenshots, so it has no pixels to check
-    [ -n "${ISOBAR_BENCH:-}${ISOBAR_ONLY:-}" ] || { python3 "$ROOT/tools/no_orange.py" "$ISOBAR_DRIVER_OUT" && gjs -m "$ROOT/tools/golden.js" "$ISOBAR_DRIVER_OUT" && python3 "$ROOT/tools/focus_lines.py" "$ISOBAR_DRIVER_OUT" && python3 "$ROOT/tools/palette_pixels.py" "$ISOBAR_DRIVER_OUT" "$ROOT/lib/palettes.js"; }
+    [ -n "${ISOBAR_BENCH:-}${ISOBAR_ONLY:-}" ] || { python3 "$ROOT/tools/no_orange.py" "$ISOBAR_DRIVER_OUT" && gjs -m "$ROOT/tools/golden.js" "$ISOBAR_DRIVER_OUT" && python3 "$ROOT/tools/focus_lines.py" "$ISOBAR_DRIVER_OUT" && python3 "$ROOT/tools/palette_pixels.py" "$ISOBAR_DRIVER_OUT" "$ROOT/lib/palettes.js" && python3 "$ROOT/tools/icons_pixels.py" "$ISOBAR_DRIVER_OUT"; }
   else
     wait $SHELL_PID
   fi

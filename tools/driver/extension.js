@@ -140,6 +140,12 @@ export default class Driver extends Extension {
             await sleep(1200);
             return this._checkNotifications();
         }
+        if (GLib.getenv('ISOBAR_ONLY') === 'icons') {
+            while (Main.layoutManager._startingUp)
+                await sleep(500);
+            await sleep(3000);
+            return this._checkIcons();
+        }
         if (GLib.getenv('ISOBAR_ONLY') === 'coucou') {
             while (Main.layoutManager._startingUp)
                 await sleep(500);
@@ -237,6 +243,7 @@ export default class Driver extends Extension {
         await this._checkAgents();
         await this._checkPalette();
         await this._checkCoucou();
+        await this._checkIcons();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -631,6 +638,36 @@ export default class Driver extends Extension {
         expect('and so is the music listener', String(!!ext()._music), 'true');
         await sleep(2500);
         expect('the summit has sunk away', String(ext()._terrain._peak), 'null');
+    }
+
+    // Isobar's own icons: the toggles use them, and the shell recolours them like any symbolic icon
+    async _checkIcons() {
+        const uuid = 'isobar@gijs.dev';
+        const ext = () => Main.extensionManager.lookup(uuid).stateObj;
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        const qs = Main.panel.statusArea.quickSettings;
+        const toggles = {focus: ext()._focusToggle, privacy: ext()._privacyToggle, palette: ext()._paletteToggle};
+        for (const [name, toggle] of Object.entries(toggles)) {
+            const file = toggle?.gicon?.get_file?.()?.get_basename();
+            expect(`the ${name} toggle uses Isobar's icon`, String(file), `isobar-${name}-symbolic.svg`);
+        }
+        // look at the pixels: focus on (an ink icon on paper), privacy and palette off (paper icons on a dark track)
+        ext()._settings.set_boolean('focus', true);
+        qs.menu.open();
+        await sleep(1200);
+        const rects = {};
+        for (const [name, toggle] of Object.entries(toggles)) {
+            const find = a => a instanceof St.Icon ? a : a.get_children().map(find).find(Boolean);
+            const icon = find(toggle);
+            const [x, y] = icon.get_transformed_position();
+            const [w, h] = icon.get_transformed_size();
+            rects[name] = [Math.round(x), Math.round(y), Math.round(w), Math.round(h), toggle.checked];
+        }
+        await screenshot('12-icons');
+        log(`icon-rects: ${JSON.stringify(rects)}`);
+        qs.menu.close();
+        ext()._settings.set_boolean('focus', false);
+        await sleep(600);
     }
 
     // Frames for the animations in the README. Each frame is stamped with its time, so tools/make_gifs.py can play them at the real speed.

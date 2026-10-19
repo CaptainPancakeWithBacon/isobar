@@ -18,6 +18,9 @@ import {Coucou} from './coucou.js';
 import {nextPrivacy} from './lib/notifications.js';
 import {NAMES} from './lib/palettes.js';
 
+// Isobar's own symbolic icons (icons/): the shell recolours them like any -symbolic icon
+const icon = (path, name) => Gio.icon_new_for_string(`${path}/icons/isobar-${name}-symbolic.svg`);
+
 const DOT = 8;
 const LONG = 28;
 
@@ -32,8 +35,8 @@ const UPowerProxy = Gio.DBusProxy.makeProxyWrapper(`
 // Cycles how much a notification shows on the island: everything, title only, app name only.
 const PRIVACY_LABELS = {all: 'Everything', title: 'Title only', app: 'App name only'};
 const PrivacyToggle = GObject.registerClass(class IsobarPrivacyToggle extends QuickToggle {
-    _init(settings) {
-        super._init({title: 'Privacy', iconName: 'view-conceal-symbolic'});
+    _init(path, settings) {
+        super._init({title: 'Privacy', gicon: icon(path, 'privacy')});
         const sync = () => {
             const level = settings.get_string('privacy');
             this.subtitle = PRIVACY_LABELS[level];
@@ -50,9 +53,9 @@ const PrivacyToggle = GObject.registerClass(class IsobarPrivacyToggle extends Qu
 
 // Choose the colours of everything Isobar draws. A click opens the list.
 const PaletteToggle = GObject.registerClass(class IsobarPaletteToggle extends QuickMenuToggle {
-    _init(settings) {
-        super._init({title: 'Palette', iconName: 'applications-graphics-symbolic', toggleMode: false});
-        this.menu.setHeader('applications-graphics-symbolic', 'Palette');
+    _init(path, settings) {
+        super._init({title: 'Palette', gicon: icon(path, 'palette'), toggleMode: false});
+        this.menu.setHeader(icon(path, 'palette'), 'Palette');
         this._items = new Map(NAMES.map(name => {
             const item = new PopupMenu.PopupMenuItem(name[0].toUpperCase() + name.slice(1));
             item.connect('activate', () => settings.set_string('palette', name));
@@ -73,8 +76,8 @@ const PaletteToggle = GObject.registerClass(class IsobarPaletteToggle extends Qu
 
 // Focus calms the terrain; ripples from events still show.
 const FocusToggle = GObject.registerClass(class IsobarFocusToggle extends QuickToggle {
-    _init(checked, onChange) {
-        super._init({title: 'Focus', iconName: 'weather-clear-night-symbolic', toggleMode: true, checked});
+    _init(path, checked, onChange) {
+        super._init({title: 'Focus', gicon: icon(path, 'focus'), toggleMode: true, checked});
         this.connect('notify::checked', () => onChange(this.checked));
     }
 });
@@ -101,7 +104,7 @@ export default class Isobar extends Extension {
         this._bannersId = this._settings.connect('changed::replace-banners', () => this._syncBanners());
         const focusOn = this._settings.get_boolean('focus');
         this._terrain.setCalm(focusOn, true);
-        const focusToggle = new FocusToggle(focusOn, on => {
+        const focusToggle = this._focusToggle = new FocusToggle(this.path, focusOn, on => {
             this._settings.set_boolean('focus', on);
             this._terrain.setCalm(on);
         });
@@ -109,8 +112,8 @@ export default class Isobar extends Extension {
             focusToggle.checked = this._settings.get_boolean('focus');
         });
         this._focus = new SystemIndicator();
-        this._privacyToggle = new PrivacyToggle(this._settings);
-        this._paletteToggle = new PaletteToggle(this._settings);
+        this._privacyToggle = new PrivacyToggle(this.path, this._settings);
+        this._paletteToggle = new PaletteToggle(this.path, this._settings);
         this._focus.quickSettingsItems.push(focusToggle, this._privacyToggle, this._paletteToggle);
         panel.statusArea.quickSettings.addExternalIndicator(this._focus);
 
@@ -196,7 +199,7 @@ export default class Isobar extends Extension {
         this._pills?.destroy();
         this._meta?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._coucou = this._coucouAt = this._coucouId = this._paletteId = this._paletteToggle = this._music = this._privacyToggle = this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+        this._focusToggle = this._coucou = this._coucouAt = this._coucouId = this._paletteId = this._paletteToggle = this._music = this._privacyToggle = this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
     }
 
     // The colours of the bar, menus and island come from palettes/<name>.css; the terrain takes them from the same data

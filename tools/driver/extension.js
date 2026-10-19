@@ -7,6 +7,7 @@ import St from 'gi://St';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
 const OUT = GLib.getenv('ISOBAR_DRIVER_OUT');
 
@@ -140,6 +141,12 @@ export default class Driver extends Extension {
             await sleep(1200);
             return this._checkNotifications();
         }
+        if (GLib.getenv('ISOBAR_ONLY') === 'duotone') {
+            while (Main.layoutManager._startingUp)
+                await sleep(500);
+            await sleep(3000);
+            return this._checkDuotone();
+        }
         if (GLib.getenv('ISOBAR_ONLY') === 'icons') {
             while (Main.layoutManager._startingUp)
                 await sleep(500);
@@ -244,6 +251,7 @@ export default class Driver extends Extension {
         await this._checkPalette();
         await this._checkCoucou();
         await this._checkIcons();
+        await this._checkDuotone();
     }
 
     // The live terrain is the desktop background. It must exist, tick, and stay cheap.
@@ -638,6 +646,57 @@ export default class Driver extends Extension {
         expect('and so is the music listener', String(!!ext()._music), 'true');
         await sleep(2500);
         expect('the summit has sunk away', String(ext()._terrain._peak), 'null');
+    }
+
+    // App icons in the dock and the tray come out in the palette's two colours, and everything is put back when it is off
+    async _checkDuotone() {
+        const uuid = 'isobar@gijs.dev';
+        const ext = () => Main.extensionManager.lookup(uuid).stateObj;
+        const expect = (label, actual, wanted) => log(`${actual === wanted ? 'ok  ' : 'FAIL'} ${label}: ${actual}${actual === wanted ? '' : ` (wanted ${wanted})`}`);
+        const {PALETTES, rgb} = await import(`file://${GLib.getenv('ROOT')}/lib/palettes.js`);
+        const {duotone} = await import(`file://${GLib.getenv('ROOT')}/lib/duotone.js`);
+        const strip = () => { const find = a => a.name === 'dashtodockDashScrollview' ? a : a.get_children().map(find).find(Boolean); return find(Main.layoutManager.uiGroup); };
+        const named = () => strip()?.get_effect('isobar-duotone');
+
+        // a tray icon of pure red, as an app indicator would be
+        const swatch = new St.Widget({style: 'background-color: #ff0000; width: 22px; height: 22px;'});
+        const fake = new PanelMenu.Button(0, 'isobar-fake-tray', true);
+        fake.add_child(swatch);
+        Main.panel.addToStatusArea('appindicator-isobar-fake', fake, 0, 'right');
+        await sleep(1200);
+        expect('the dock\'s icon strip has the duotone effect', String(!!named()), 'true');
+        expect('a tray icon has it too', String(!!fake.container.get_effect('isobar-duotone')), 'true');
+        expect('the dock\'s background does not (only the icons)', String(!!strip().get_parent().get_effect?.('isobar-duotone')), 'false');
+
+        const probes = [];
+        const probe = async (label, palette) => {
+            const [x, y] = swatch.get_transformed_position();
+            const expected = duotone([1, 0, 0], rgb(PALETTES[palette].ink), rgb(PALETTES[palette].paper)).map(v => Math.round(v * 255));
+            await screenshot(`13-duotone-${label}`);
+            probes.push({label, x: Math.round(x) + 11, y: Math.round(y) + 11, expected});
+        };
+        await probe('mint', 'mint');
+        ext()._settings.set_string('palette', 'sand');
+        await sleep(900);
+        await probe('sand', 'sand');
+        ext()._settings.set_string('palette', 'mint');
+        ext()._settings.set_boolean('duotone-icons', false);
+        await sleep(900);
+        expect('with duotone-icons off the dock strip is untouched', String(!!named()), 'false');
+        expect('and so is the tray icon', String(!!fake.container.get_effect('isobar-duotone')), 'false');
+        await probe('off', 'mint');
+        probes[2].expected = [255, 0, 0];
+        log(`duotone-probes: ${JSON.stringify(probes)}`);
+        ext()._settings.set_boolean('duotone-icons', true);
+        await sleep(900);
+        expect('turned on again it comes back', String(!!named()), 'true');
+
+        fake.destroy();
+        Main.extensionManager.disableExtension(uuid);
+        await sleep(1200);
+        expect('with Isobar off nothing is left on the dock', String(!!named()), 'false');
+        Main.extensionManager.enableExtension(uuid);
+        await sleep(1500);
     }
 
     // Isobar's own icons: the toggles use them, and the shell recolours them like any symbolic icon

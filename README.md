@@ -41,6 +41,7 @@ GNOME is calm but plain, and most shell themes only repaint it. Isobar changes w
 - 🐣 **Coucou-aware.** If [Coucou](#coucou) is running, the terrain builds a summit under it and Isobar's own island steps aside, so nothing shows twice.
 - 🗺️ **A contour desktop.** A shader draws the lines behind your windows. The terrain drifts slowly, ripples when you switch workspace or open quick settings, and calms down in Focus mode.
 - 📏 **A different bar.** Workspace pills on the left (the current one is long), date and battery as one button that opens quick settings.
+- 🎞️ **Duotone icons.** The icons in the Ubuntu Dock and in tray icons (AppIndicator and similar) are drawn in the palette's two colours, so every app keeps its shape and nothing clashes. Switch it off to get the apps' own colours back.
 - 🖤 **Quick settings in ink and paper**, with Focus, Privacy and Palette toggles.
 - 🔋 **Cheap when you are not looking.** The terrain hides while a window covers the screen, and can redraw rarely, or never, at rest.
 
@@ -94,6 +95,7 @@ Most settings are toggles in quick settings. All of them are also GSettings keys
 | How much a notification shows | **Privacy** toggle, cycles on click | `privacy`: `all`, `title`, `app` | `all` |
 | Notifications on the island instead of GNOME's banner | — | `replace-banners` | on |
 | Step aside for Coucou, with a summit in the terrain under it | — | `coucou-aware` | on |
+| Dock and tray icons in the palette's two colours | — | `duotone-icons` | on |
 | Terrain redraws per second at rest (0 = still until something happens) | — | `idle-fps`, 0 to 30 | 10 |
 
 ```bash

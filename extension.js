@@ -15,6 +15,7 @@ import {Island} from './island.js';
 import {Notifications} from './notifications.js';
 import {Music} from './music.js';
 import {Coucou} from './coucou.js';
+import {Duotone} from './duotone.js';
 import {nextPrivacy} from './lib/notifications.js';
 import {NAMES} from './lib/palettes.js';
 
@@ -99,6 +100,8 @@ export default class Isobar extends Extension {
         });
         this._applyPalette();
         this._paletteId = this._settings.connect('changed::palette', () => this._applyPalette());
+        this._syncDuotone();
+        this._duotoneId = this._settings.connect('changed::duotone-icons', () => this._syncDuotone());
         this._syncCoucou();   // also starts notifications and music, unless Coucou is there
         this._coucouId = this._settings.connect('changed::coucou-aware', () => this._syncCoucou());
         this._bannersId = this._settings.connect('changed::replace-banners', () => this._syncBanners());
@@ -180,7 +183,10 @@ export default class Isobar extends Extension {
             this._settings.disconnect(this._paletteId);
         if (this._coucouId)
             this._settings.disconnect(this._coucouId);
+        if (this._duotoneId)
+            this._settings.disconnect(this._duotoneId);
         this._unloadPalette();
+        this._duotone?.destroy();
         this._coucou?.destroy();
         this._notifications?.destroy();
         this._music?.destroy();
@@ -199,7 +205,7 @@ export default class Isobar extends Extension {
         this._pills?.destroy();
         this._meta?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._focusToggle = this._coucou = this._coucouAt = this._coucouId = this._paletteId = this._paletteToggle = this._music = this._privacyToggle = this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
+        this._duotone = this._duotoneId = this._focusToggle = this._coucou = this._coucouAt = this._coucouId = this._paletteId = this._paletteToggle = this._music = this._privacyToggle = this._island = this._notifications = this._bannersId = this._settings = this._idleFpsId = this._focusId = this._focus = this._terrain = this._battery_icon = this._wmIds = this._upower = this._clock = this._pills = this._meta = this._hidden = null;
     }
 
     // The colours of the bar, menus and island come from palettes/<name>.css; the terrain takes them from the same data
@@ -210,6 +216,7 @@ export default class Isobar extends Extension {
         this._paletteFile = Gio.File.new_for_path(`${this.path}/palettes/${name}.css`);
         theme.load_stylesheet(this._paletteFile);
         this._terrain.setPalette(name);
+        this._duotone?.setPalette(name);
     }
 
     _unloadPalette() {
@@ -217,6 +224,11 @@ export default class Isobar extends Extension {
             return;
         St.ThemeContext.get_for_stage(global.stage).get_theme().unload_stylesheet(this._paletteFile);
         this._paletteFile = null;
+    }
+
+    _syncDuotone() {
+        this._duotone?.destroy();
+        this._duotone = this._settings.get_boolean('duotone-icons') ? new Duotone(this._settings.get_string('palette')) : null;
     }
 
     // Coucou on screen: a summit under it, our island steps aside, and notifications and music are Coucou's to show

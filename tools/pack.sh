@@ -6,7 +6,7 @@ OUT=${1:-$ROOT/dist}
 mkdir -p "$OUT"
 cd "$ROOT"
 gnome-extensions pack --force --out-dir "$OUT" \
-    --extra-source=coucou.js --extra-source=icons --extra-source=lib --extra-source=palettes --extra-source=island.js --extra-source=music.js \
+    --extra-source=coucou.js --extra-source=duotone.js --extra-source=icons --extra-source=lib --extra-source=palettes --extra-source=island.js --extra-source=music.js \
     --extra-source=notifications.js --extra-source=terrain-layer.js .
 ZIP=$OUT/isobar@gijs.dev.shell-extension.zip
 echo "== $ZIP"

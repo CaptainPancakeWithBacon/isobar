@@ -39,6 +39,11 @@
       <summary>Step aside for Coucou</summary>
       <description>While Coucou's island is on screen, build a summit in the terrain under it, hide Isobar's own island and leave notifications and music to Coucou. Turn off to always use Isobar's island.</description>
     </key>
+    <key name="duotone-icons" type="b">
+      <default>true</default>
+      <summary>Duotone icons</summary>
+      <description>Draw the icons of the Ubuntu Dock and of tray icons in the two colours of the palette, ink and paper. Turn off for the apps' own colours.</description>
+    </key>
     <key name="replace-banners" type="b">
       <default>true</default>
       <summary>Show notifications on the island</summary>

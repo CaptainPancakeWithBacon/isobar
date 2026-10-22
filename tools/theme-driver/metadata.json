@@ -1,0 +1,6 @@
+{
+  "uuid": "isobar-theme-driver@gijs.dev",
+  "name": "Isobar theme test driver",
+  "description": "Test only. Loads an Isobar shell theme in a throwaway shell, takes screenshots and reads colours.",
+  "shell-version": ["50"]
+}

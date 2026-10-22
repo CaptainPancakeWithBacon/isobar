@@ -22,6 +22,19 @@ Isobar is an extension for GNOME Shell. The desktop is a contour map that drifts
   <img alt="The island opens for a notification, then for an agent that needs you, and the terrain ripples from it" src="docs/media/island.gif" width="480">
 </p>
 
+## The theme
+
+Isobar is, first of all, a GNOME shell theme: five palettes (mint, sand, sky, blush, stone) in ink and paper, with no accent colour. It styles the bar, quick settings, menus, the calendar and message list, banners, the overview and app grid, search, the volume pop-up, the app switcher and dialogs. It is plain CSS on top of GNOME's own stylesheet, so it adds no code to your shell and costs nothing at runtime.
+
+```bash
+theme/install.sh mint            # or sand, sky, blush, stone; no argument installs all five
+gsettings set org.gnome.shell.extensions.user-theme name 'Isobar-Mint'
+```
+
+You need the User Themes extension enabled (Ubuntu ships it). The theme is tested on GNOME Shell 50 in a throwaway shell (`tools/theme-test-all.sh`), and its colours are checked in every palette, including that none of the shell's own accent colour leaks through. The shell takes its accent from a system setting, which a stylesheet cannot change, so the theme overrides every place the accent would show.
+
+The live terrain, island, notifications, Focus and Coucou parts described below are an optional extension on top of the theme. They are written for GNOME 46 and have not been ported to GNOME 50.
+
 ## Why
 
 GNOME is calm but plain, and most shell themes only repaint it. Isobar changes what the shell *does*: events arrive in one place, they move the whole desktop a little, and then they leave. An isobar is a line of equal pressure on a weather map, and the desktop is drawn with them.

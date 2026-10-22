@@ -11,21 +11,16 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/data/gnome-shell/extensions" "$TMP/config"
 ln -s "$ROOT/tools/theme-driver" "$TMP/data/gnome-shell/extensions/isobar-theme-driver@gijs.dev"
+# ISOBAR_EXTRA_EXTENSIONS="uuid uuid": also enable these extensions (copied by link from your own or the system folders), to see how the theme behaves next to them
+EXTRA_JSON=""
+for uuid in ${ISOBAR_EXTRA_EXTENSIONS:-}; do
+    for base in ${ISOBAR_EXTENSION_DIRS:-} "$HOME/.local/share/gnome-shell/extensions" /usr/share/gnome-shell/extensions; do
+        [ -d "$base/$uuid" ] && { ln -s "$base/$uuid" "$TMP/data/gnome-shell/extensions/$uuid"; EXTRA_JSON="$EXTRA_JSON, '$uuid'"; break; }
+    done
+done
+export ISOBAR_EXTRA_JSON="$EXTRA_JSON"
 export XDG_DATA_HOME="$TMP/data" XDG_CONFIG_HOME="$TMP/config" ROOT
 
-dbus-run-session -- bash -c '
-  gsettings set org.gnome.shell disable-user-extensions false
-  # a flat ground colour instead of the wallpaper, so the screenshots show the theme and not a photo
-  gsettings set org.gnome.desktop.background picture-options none
-  gsettings set org.gnome.desktop.background picture-uri ""
-  gsettings set org.gnome.desktop.background picture-uri-dark ""
-  gsettings set org.gnome.desktop.background primary-color "${ISOBAR_GROUND:-#C8E0D8}"
-  gsettings set org.gnome.shell enabled-extensions "[\"isobar-theme-driver@gijs.dev\"]"
-  gnome-shell --headless --virtual-monitor 1280x800 &
-  SHELL_PID=$!
-  trap "kill $SHELL_PID 2>/dev/null" EXIT
-  for _ in $(seq 120); do [ -e "$ISOBAR_DRIVER_OUT/done" ] && break; sleep 1; done
-  cat "$ISOBAR_DRIVER_OUT/driver.log"
-  [ -e "$ISOBAR_DRIVER_OUT/done" ] || { echo "FAIL the driver did not finish within 120 s"; exit 1; }
-  ! grep -q FAIL "$ISOBAR_DRIVER_OUT/driver.log"
-'
+# the bus of the session this runs from, so the inside can refuse to run on it
+export ISOBAR_OUTER_BUS="$DBUS_SESSION_BUS_ADDRESS"
+dbus-run-session -- bash "$ROOT/tools/theme-test-session.sh"

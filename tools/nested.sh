@@ -15,7 +15,10 @@ ln -s "$EXT_DIR" "$TMP/data/gnome-shell/extensions/isobar@gijs.dev"
 ln -s "$ROOT/tools/driver" "$TMP/data/gnome-shell/extensions/isobar-driver@gijs.dev"
 export XDG_DATA_HOME="$TMP/data" XDG_CONFIG_HOME="$TMP/config" ROOT
 
+# the bus of the session this runs from: the inside refuses to run on it, so a slip in this file cannot touch your real settings
+export ISOBAR_OUTER_BUS="$DBUS_SESSION_BUS_ADDRESS"
 dbus-run-session -- bash -c '
+  [ "$DBUS_SESSION_BUS_ADDRESS" != "$ISOBAR_OUTER_BUS" ] || { echo "refusing to run: this is not a throwaway session" >&2; exit 2; }
   gsettings set org.gnome.desktop.interface toolkit-accessibility true
   gsettings set org.gnome.shell disable-user-extensions false
   if [ "${1:-}" = "--drive" ]; then EXT="[\"isobar@gijs.dev\", \"isobar-driver@gijs.dev\"]"; else EXT="[\"isobar@gijs.dev\"]"; fi

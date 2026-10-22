@@ -33,6 +33,16 @@ gsettings set org.gnome.shell.extensions.user-theme name 'Isobar-Mint'
 
 You need the User Themes extension enabled (Ubuntu ships it). The theme is tested on GNOME Shell 50 in a throwaway shell (`tools/theme-test-all.sh`), and its colours are checked in every palette, including that none of the shell's own accent colour leaks through. The shell takes its accent from a system setting, which a stylesheet cannot change, so the theme overrides every place the accent would show.
 
+**Blur My Shell.** That extension restyles popups, the bar and the overview with its own `!important` colours, which no theme can override, so with it enabled Isobar's quick settings, calendar and bar keep Blur My Shell's colours (and its accent). To see Isobar properly, switch off its Popups blur, its Panel blur and the overview component style:
+
+```bash
+dconf write /org/gnome/shell/extensions/blur-my-shell/popup/blur false
+dconf write /org/gnome/shell/extensions/blur-my-shell/panel/blur false
+dconf write /org/gnome/shell/extensions/blur-my-shell/overview/style-components 0
+```
+
+To undo that, `dconf reset` the same three keys. The theme tests run with Blur My Shell enabled and these off (`ISOBAR_EXTRA_EXTENSIONS`, `ISOBAR_DCONF` in `tools/theme-test.sh`).
+
 The live terrain, island, notifications, Focus and Coucou parts described below are an optional extension on top of the theme. They are written for GNOME 46 and have not been ported to GNOME 50.
 
 ## Why

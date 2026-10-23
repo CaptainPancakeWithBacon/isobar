@@ -198,8 +198,13 @@ stage {
     color: ${p.paper};
 }
 
-#dash .dash-background {
+#overviewGroup #dash .dash-background {
     background-color: ${p.track};
+}
+
+/* the Ubuntu Dock: the same ink as the bar. The dock takes this colour and applies its own opacity setting to it */
+#dashtodockContainer #dash .dash-background {
+    background-color: ${p.ink};
 }
 
 .app-folder,

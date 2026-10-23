@@ -144,6 +144,14 @@ export default class ThemeDriver extends Extension {
             const tiles = [];
             const gather = a => { if (a.has_style_class_name?.('overview-tile')) tiles.push(a); a.get_children().forEach(gather); };
             gather(dock);
+            // the dock is the same ink as the bar, and solid, whatever transparency the dock itself is set to
+            const strip = a => a.has_style_class_name?.('dash-background') ? a : a.get_children().map(strip).find(Boolean);
+            const backdrop = strip(dock);
+            if (backdrop) {
+                const c = backdrop.get_theme_node().get_background_color();
+                expect('the dock is ink like the bar', hex(c), lower.ink);
+                expect('and solid when the dock is set to full opacity', String(c.alpha), '255');
+            }
             const tile = tiles[0];
             expect('the dock has icons to look at', String(!!tile), 'true');
             if (tile) {

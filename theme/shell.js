@@ -221,8 +221,8 @@ stage {
     color: ${p.paper};
 }
 
-.overview-tile:hover,
-.overview-tile:focus,
+.icon-grid .overview-tile:hover,
+.icon-grid .overview-tile:focus,
 .app-folder:hover,
 .list-search-result:hover,
 .list-search-result:focus {

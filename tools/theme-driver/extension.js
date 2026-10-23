@@ -138,6 +138,24 @@ export default class ThemeDriver extends Extension {
         Main.overview.hide();
         await sleep(1200);
 
+        // the Ubuntu Dock, when it is enabled: its icons sit on the bar itself, with no box of their own, however they are hovered or focused
+        const dock = Main.layoutManager.uiGroup.get_children().find(a => a.name === 'dashtodockContainer');
+        if (dock) {
+            const tiles = [];
+            const gather = a => { if (a.has_style_class_name?.('overview-tile')) tiles.push(a); a.get_children().forEach(gather); };
+            gather(dock);
+            const tile = tiles[0];
+            expect('the dock has icons to look at', String(!!tile), 'true');
+            if (tile) {
+                for (const state of ['', 'hover', 'focus', 'focus hover']) {
+                    ['hover', 'focus'].forEach(c => tile.remove_style_pseudo_class(c));
+                    state.split(' ').filter(Boolean).forEach(c => tile.add_style_pseudo_class(c));
+                    expect(`a dock icon (${state || 'resting'}) paints no box of its own`, String(tile.get_theme_node().get_background_color().alpha), '0');
+                }
+                ['hover', 'focus'].forEach(c => tile.remove_style_pseudo_class(c));
+            }
+        }
+
         // the volume pop-up (its window is not shown in a headless shell, so its colours are read, not photographed)
         Main.osdWindowManager.show(Gio.ThemedIcon.new('audio-volume-medium-symbolic'), 'Volume', 0.6, 1, -1);
         await sleep(300);

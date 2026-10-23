@@ -76,8 +76,8 @@ export default class ThemeDriver extends Extension {
         const colour = (actor, prop) => { const [ok, c] = actor.get_theme_node().lookup_color(prop, false); return ok ? hex(c) : 'none'; };
         const check = (label, actor, what, wanted) => expect(label, actor ? what(actor) : 'missing', wanted);
 
-        check('the bar is ink', Main.panel, bg, lower.ink);
-        check('bar text is paper', Main.panel.statusArea.dateMenu._clockDisplay, fg, lower.paper);
+        check('the bar is the ground colour', Main.panel, bg, lower.ground);
+        check('bar text is ink', Main.panel.statusArea.dateMenu._clockDisplay, fg, lower.ink);
         await screenshot('01-desktop');
 
         // quick settings
@@ -149,7 +149,7 @@ export default class ThemeDriver extends Extension {
             const backdrop = strip(dock);
             if (backdrop) {
                 const c = backdrop.get_theme_node().get_background_color();
-                expect('the dock is ink like the bar', hex(c), lower.ink);
+                expect('the dock is the same colour as the bar', hex(c), lower.ground);
                 expect('and solid when the dock is set to full opacity', String(c.alpha), '255');
             }
             const tile = tiles[0];

@@ -14,6 +14,10 @@ gsettings set org.gnome.shell disable-user-extensions false
 for pair in ${ISOBAR_DCONF:-}; do
     dconf write "${pair%%=*}" "${pair#*=}"
 done
+# ISOBAR_DCONF_LOAD=<file>: a dump of extension settings (dconf dump /org/gnome/shell/extensions/) to replay here
+if [ -n "${ISOBAR_DCONF_LOAD:-}" ]; then
+    dconf load /org/gnome/shell/extensions/ < "$ISOBAR_DCONF_LOAD"
+fi
 # a flat ground colour instead of the wallpaper, so the screenshots show the theme and not a photo
 gsettings set org.gnome.desktop.interface color-scheme "${ISOBAR_COLOR_SCHEME:-default}"
 gsettings set org.gnome.desktop.background picture-options none

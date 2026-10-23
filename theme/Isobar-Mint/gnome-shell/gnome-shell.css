@@ -5,21 +5,21 @@ stage {
     color: #EAF4F0;
 }
 
-/* the bar */
+/* the bar: the ground colour of the palette, so it melts into the desktop, with ink text */
 #panel {
-    background-color: #0F2F33;
+    background-color: #C8E0D8;
 }
 
 #panel .panel-button {
-    color: #EAF4F0;
+    color: #0F2F33;
 }
 
 #panel .panel-button:hover,
 #panel .panel-button:focus,
 #panel .panel-button:active,
 #panel .panel-button:checked {
-    background-color: #1F4A4F;
-    color: #EAF4F0;
+    background-color: #9CC6BB;
+    color: #0F2F33;
 }
 
 /* menus */
@@ -192,9 +192,9 @@ stage {
     background-color: #1F4A4F;
 }
 
-/* the Ubuntu Dock: the same ink as the bar. The dock takes this colour and applies its own opacity setting to it */
+/* the Ubuntu Dock: the same colour as the bar. The dock takes this colour and applies its own opacity setting to it */
 #dashtodockContainer #dash .dash-background {
-    background-color: #0F2F33;
+    background-color: #C8E0D8;
 }
 
 .app-folder,

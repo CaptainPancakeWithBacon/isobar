@@ -27,6 +27,11 @@ test('text can be read: paper on ink, ink on paper, muted text on ink', () => {
     }
 });
 
+test('the bar is the ground colour, so ink text must be readable on it', () => {
+    for (const n of NAMES)
+        eq([n, contrast(PALETTES[n].ink, PALETTES[n].ground) >= 7], [n, true]);
+});
+
 test('the contour lines can be seen on the ground, the major ones more than the minor', () => {
     for (const n of NAMES) {
         const p = PALETTES[n];

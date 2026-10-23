@@ -15,21 +15,21 @@ stage {
     color: ${p.paper};
 }
 
-/* the bar */
+/* the bar: the ground colour of the palette, so it melts into the desktop, with ink text */
 #panel {
-    background-color: ${p.ink};
+    background-color: ${p.ground};
 }
 
 #panel .panel-button {
-    color: ${p.paper};
+    color: ${p.ink};
 }
 
 #panel .panel-button:hover,
 #panel .panel-button:focus,
 #panel .panel-button:active,
 #panel .panel-button:checked {
-    background-color: ${p.track};
-    color: ${p.paper};
+    background-color: ${p.minor};
+    color: ${p.ink};
 }
 
 /* menus */
@@ -202,9 +202,9 @@ stage {
     background-color: ${p.track};
 }
 
-/* the Ubuntu Dock: the same ink as the bar. The dock takes this colour and applies its own opacity setting to it */
+/* the Ubuntu Dock: the same colour as the bar. The dock takes this colour and applies its own opacity setting to it */
 #dashtodockContainer #dash .dash-background {
-    background-color: ${p.ink};
+    background-color: ${p.ground};
 }
 
 .app-folder,

@@ -31,9 +31,19 @@ test('the accent colour is overridden where it would show: checked toggles, toda
         eq([selector, text.includes(selector)], [selector, true]);
 });
 
-test('the ground colour is for the wallpaper, so it is not painted on any shell surface', () => {
-    for (const key of NAMES)
-        eq([key, css(key).toUpperCase().includes(PALETTES[key].ground.toUpperCase())], [key, false]);
+test('the bar and the dock are the ground colour, and nothing else in the shell is', () => {
+    for (const key of NAMES) {
+        const text = css(key).replace(/\/\*[\s\S]*?\*\//g, '');   // without the comments
+        const ground = PALETTES[key].ground.toUpperCase();
+        const rules = text.split('}').filter(r => r.toUpperCase().includes(ground)).map(r => r.split('{')[0].trim());
+        eq([key, rules], [key, ['#panel', '#dashtodockContainer #dash .dash-background']]);
+    }
+});
+
+test('on a light bar the bar text is ink, not paper', () => {
+    const text = css('sand');
+    const block = text.slice(text.indexOf('#panel .panel-button {'));
+    eq(block.slice(0, block.indexOf('}')).includes(PALETTES.sand.ink), true);
 });
 
 test('the installer copies a theme to the themes folder and refuses an unknown palette', () => {

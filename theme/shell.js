@@ -15,21 +15,54 @@ stage {
     color: ${p.paper};
 }
 
-/* the bar: the ground colour of the palette, so it melts into the desktop, with ink text */
-#panel {
-    background-color: ${p.ground};
+/* the bar: the ground colour of the palette, so it melts into the desktop, with ink text.
+   Ubuntu's own Yaru stylesheet is the default under every theme on Ubuntu and paints the bar with !important, so these do too */
+#panel,
+#panel:overview {
+    background-color: ${p.ground} !important;
+    box-shadow: none !important;
 }
 
-#panel .panel-button {
+#panel .panel-button,
+#panel:overview .panel-button,
+#panel .panel-button.clock-display,
+#panel:overview .panel-button.clock-display {
     color: ${p.ink};
 }
 
 #panel .panel-button:hover,
 #panel .panel-button:focus,
 #panel .panel-button:active,
-#panel .panel-button:checked {
+#panel .panel-button:checked,
+#panel:overview .panel-button:hover,
+#panel:overview .panel-button:focus,
+#panel:overview .panel-button:active,
+#panel:overview .panel-button:checked {
     background-color: ${p.minor};
     color: ${p.ink};
+}
+
+#panel .panel-button.clock-display:hover .clock,
+#panel .panel-button.clock-display:focus .clock,
+#panel .panel-button.clock-display:active .clock,
+#panel .panel-button.clock-display:checked .clock {
+    box-shadow: inset 0 0 0 100px ${p.minor};
+    color: ${p.ink};
+}
+
+#panel .system-status-icon,
+#panel:overview .system-status-icon {
+    color: ${p.ink} !important;
+}
+
+#panel .panel-button StIcon,
+#panel:overview .panel-button StIcon {
+    color: ${p.ink};
+}
+
+#panel .panel-button#panelActivities .workspace-dot,
+#panel:overview .panel-button#panelActivities .workspace-dot {
+    background-color: ${p.ink} !important;
 }
 
 /* menus */

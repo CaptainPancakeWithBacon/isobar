@@ -78,6 +78,23 @@ export default class ThemeDriver extends Extension {
 
         check('the bar is the ground colour', Main.panel, bg, lower.ground);
         check('bar text is ink', Main.panel.statusArea.dateMenu._clockDisplay, fg, lower.ink);
+        // the bar in its other states: a hovered button, the workspace dots, and the bar in the overview
+        const qsButton = Main.panel.statusArea.quickSettings;
+        for (const state of ['hover', 'focus', 'active']) {
+            qsButton.add_style_pseudo_class(state);
+            expect(`a ${state} bar button keeps ink text`, fg(qsButton), lower.ink);
+            qsButton.remove_style_pseudo_class(state);
+        }
+        check('the status icons in the bar are ink', find('system-status-icon'), fg, lower.ink);
+        const dotCheck = find('workspace-dot');
+        check('the workspace dots in the bar are ink', dotCheck, bg, lower.ink);
+        Main.overview.show();
+        await sleep(1500);
+        check('in the overview the bar is still the ground colour', Main.panel, bg, lower.ground);
+        check('and its clock still ink', Main.panel.statusArea.dateMenu._clockDisplay, fg, lower.ink);
+        check('and the workspace dots too', find('workspace-dot'), bg, lower.ink);
+        Main.overview.hide();
+        await sleep(1200);
         await screenshot('01-desktop');
 
         // quick settings

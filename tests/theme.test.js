@@ -36,13 +36,13 @@ test('the bar and the dock are the ground colour, and nothing else in the shell 
         const text = css(key).replace(/\/\*[\s\S]*?\*\//g, '');   // without the comments
         const ground = PALETTES[key].ground.toUpperCase();
         const rules = text.split('}').filter(r => r.toUpperCase().includes(ground)).map(r => r.split('{')[0].trim());
-        eq([key, rules], [key, ['#panel', '#dashtodockContainer #dash .dash-background']]);
+        eq([key, rules.map(r => r.replace(/\s+/g, ' '))], [key, ['#panel, #panel:overview', '#dashtodockContainer #dash .dash-background']]);
     }
 });
 
 test('on a light bar the bar text is ink, not paper', () => {
     const text = css('sand');
-    const block = text.slice(text.indexOf('#panel .panel-button {'));
+    const block = text.slice(text.indexOf('#panel .panel-button,'));
     eq(block.slice(0, block.indexOf('}')).includes(PALETTES.sand.ink), true);
 });
 

@@ -31,7 +31,7 @@ theme/install.sh mint            # or sand, sky, blush, stone; no argument insta
 gsettings set org.gnome.shell.extensions.user-theme name 'Isobar-Mint'
 ```
 
-You need the User Themes extension enabled (Ubuntu ships it). The theme is tested on GNOME Shell 50 in a throwaway shell (`tools/theme-test-all.sh`), and its colours are checked in every palette, including that none of the shell's own accent colour leaks through. The shell takes its accent from a system setting, which a stylesheet cannot change, so the theme overrides every place the accent would show.
+You need the User Themes extension enabled (Ubuntu ships it). On Ubuntu the shell loads its own Yaru stylesheet under every theme and Yaru paints the bar with `!important`, so the theme repeats the bar's colours with `!important` too; the tests therefore run the throwaway shell in the Ubuntu session mode. The theme is tested on GNOME Shell 50 in a throwaway shell (`tools/theme-test-all.sh`), and its colours are checked in every palette, including that none of the shell's own accent colour leaks through. The shell takes its accent from a system setting, which a stylesheet cannot change, so the theme overrides every place the accent would show.
 
 **Blur My Shell.** That extension restyles popups, the bar and the overview with its own `!important` colours, which no theme can override, so with it enabled Isobar's quick settings, calendar and bar keep Blur My Shell's colours (and its accent). To see Isobar properly, switch off its Popups blur, its Panel blur and the overview component style:
 

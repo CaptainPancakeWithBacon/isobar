@@ -25,7 +25,8 @@ gsettings set org.gnome.desktop.background picture-uri ""
 gsettings set org.gnome.desktop.background picture-uri-dark ""
 gsettings set org.gnome.desktop.background primary-color "${ISOBAR_GROUND:-#C8E0D8}"
 gsettings set org.gnome.shell enabled-extensions "['isobar-theme-driver@gijs.dev'$ISOBAR_EXTRA_JSON]"
-gnome-shell --headless --virtual-monitor 1280x800 &
+# the real session runs in the ubuntu mode, whose Yaru stylesheet is the default under every user theme, so tests do too
+gnome-shell --mode=${ISOBAR_SHELL_MODE:-ubuntu} --headless --virtual-monitor 1280x800 &
 SHELL_PID=$!
 trap 'kill $SHELL_PID 2>/dev/null' EXIT
 for _ in $(seq 120); do

@@ -31,19 +31,19 @@ test('the accent colour is overridden where it would show: checked toggles, toda
         eq([selector, text.includes(selector)], [selector, true]);
 });
 
-test('the bar and the dock are the ground colour, and nothing else in the shell is', () => {
-    for (const key of NAMES) {
-        const text = css(key).replace(/\/\*[\s\S]*?\*\//g, '');   // without the comments
-        const ground = PALETTES[key].ground.toUpperCase();
-        const rules = text.split('}').filter(r => r.toUpperCase().includes(ground)).map(r => r.split('{')[0].trim());
-        eq([key, rules.map(r => r.replace(/\s+/g, ' '))], [key, ['#panel, #panel:overview', '#dashtodockContainer #dash .dash-background']]);
-    }
+test('the ground colour is for the wallpaper, so it is not painted on any shell surface', () => {
+    for (const key of NAMES)
+        eq([key, css(key).toUpperCase().includes(PALETTES[key].ground.toUpperCase())], [key, false]);
 });
 
-test('on a light bar the bar text is ink, not paper', () => {
-    const text = css('sand');
-    const block = text.slice(text.indexOf('#panel .panel-button,'));
-    eq(block.slice(0, block.indexOf('}')).includes(PALETTES.sand.ink), true);
+test('the bar and the dock are ink, with paper text', () => {
+    const text = css('sand').replace(/\/\*[\s\S]*?\*\//g, '');
+    const bar = text.slice(text.indexOf('#panel,'));
+    eq(bar.slice(0, bar.indexOf('}')).includes(`background-color: ${PALETTES.sand.ink} !important`), true);
+    const buttons = text.slice(text.indexOf('#panel .panel-button,'));
+    eq(buttons.slice(0, buttons.indexOf('}')).includes(`color: ${PALETTES.sand.paper}`), true);
+    const dock = text.slice(text.indexOf('#dashtodockContainer #dash .dash-background'));
+    eq(dock.slice(0, dock.indexOf('}')).includes(PALETTES.sand.ink), true);
 });
 
 test('the installer copies a theme to the themes folder and refuses an unknown palette', () => {

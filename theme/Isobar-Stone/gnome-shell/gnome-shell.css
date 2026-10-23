@@ -5,11 +5,11 @@ stage {
     color: #F2F2EE;
 }
 
-/* the bar: the ground colour of the palette, so it melts into the desktop, with ink text.
-   Ubuntu's own Yaru stylesheet is the default under every theme on Ubuntu and paints the bar with !important, so these do too */
+/* the bar: ink with paper text.
+   Ubuntu's own Yaru stylesheet is the default under every theme on Ubuntu and paints the bar black with !important, so these do too */
 #panel,
 #panel:overview {
-    background-color: #DDDDD8 !important;
+    background-color: #1E1E1C !important;
     box-shadow: none !important;
 }
 
@@ -17,7 +17,7 @@ stage {
 #panel:overview .panel-button,
 #panel .panel-button.clock-display,
 #panel:overview .panel-button.clock-display {
-    color: #1E1E1C;
+    color: #F2F2EE;
 }
 
 #panel .panel-button:hover,
@@ -28,31 +28,31 @@ stage {
 #panel:overview .panel-button:focus,
 #panel:overview .panel-button:active,
 #panel:overview .panel-button:checked {
-    background-color: #BEBEB7;
-    color: #1E1E1C;
+    background-color: #383835;
+    color: #F2F2EE;
 }
 
 #panel .panel-button.clock-display:hover .clock,
 #panel .panel-button.clock-display:focus .clock,
 #panel .panel-button.clock-display:active .clock,
 #panel .panel-button.clock-display:checked .clock {
-    box-shadow: inset 0 0 0 100px #BEBEB7;
-    color: #1E1E1C;
+    box-shadow: inset 0 0 0 100px #383835;
+    color: #F2F2EE;
 }
 
 #panel .system-status-icon,
 #panel:overview .system-status-icon {
-    color: #1E1E1C !important;
+    color: #F2F2EE !important;
 }
 
 #panel .panel-button StIcon,
 #panel:overview .panel-button StIcon {
-    color: #1E1E1C;
+    color: #F2F2EE;
 }
 
 #panel .panel-button#panelActivities .workspace-dot,
 #panel:overview .panel-button#panelActivities .workspace-dot {
-    background-color: #1E1E1C !important;
+    background-color: #F2F2EE !important;
 }
 
 /* menus */
@@ -225,9 +225,9 @@ stage {
     background-color: #383835;
 }
 
-/* the Ubuntu Dock: the same colour as the bar. The dock takes this colour and applies its own opacity setting to it */
+/* the Ubuntu Dock: the same ink as the bar. The dock takes this colour and applies its own opacity setting to it */
 #dashtodockContainer #dash .dash-background {
-    background-color: #DDDDD8;
+    background-color: #1E1E1C;
 }
 
 .app-folder,

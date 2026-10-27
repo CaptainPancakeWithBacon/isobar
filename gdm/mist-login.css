@@ -1,0 +1,48 @@
+
+/* ---- Mist: appended to Yaru's gdm.css by gdm/build.sh ---- */
+#lockDialogGroup {
+  background-color: #14181c;
+  background-image: url("resource:///org/gnome/shell/theme/mist-login.jpg");
+  background-size: cover;
+  background-position: center; }
+
+/* no Ubuntu logo */
+.login-dialog-logo-bin {
+  height: 0;
+  margin: 0;
+  opacity: 0; }
+
+/* the bar over the login screen sits on the wallpaper, like Mist's */
+#panel {
+  background-color: transparent;
+  box-shadow: none; }
+
+/* the name card: soft glass instead of a grey slab with an orange outline */
+.login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item {
+  background-color: rgba(246, 248, 249, 0.14);
+  border: none;
+  border-radius: 24px;
+  box-shadow: none;
+  padding: 10px 18px;
+  color: #f4f6f8; }
+
+.login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item:hover,
+.login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item:focus,
+.login-dialog-user-list-view .login-dialog-user-list .login-dialog-user-list-item:selected {
+  background-color: rgba(246, 248, 249, 0.26);
+  border: none;
+  box-shadow: none; }
+
+.login-dialog .user-widget.horizontal .user-widget-label {
+  color: #f4f6f8;
+  font-weight: 500; }
+
+.login-dialog-not-listed-label,
+.login-dialog-not-listed-button {
+  color: rgba(244, 246, 248, 0.75); }
+
+.login-dialog .login-dialog-prompt-entry {
+  background-color: rgba(246, 248, 249, 0.16);
+  border: none;
+  border-radius: 16px;
+  color: #f4f6f8; }

@@ -26,3 +26,18 @@ gnome-extensions enable mist@gijs.dev
 ```
 
 Undo: `gnome-extensions disable mist@gijs.dev`. Mist replaces the shell colours itself, so switch the User Themes theme back to Default first if you have one set, and turn off Blur My Shell's panel/popup styling, which overrides themes.
+
+## Login screen
+
+The login screen (GDM) is a separate shell that extensions can't reach. `gdm/build.sh` builds Yaru's login theme plus Mist's overrides
+(your wallpaper darkened and blurred, no Ubuntu logo, a soft name card) into `gdm/build/gnome-shell-theme.gresource`, and
+`tools/gdm-test.sh` checks it in a throwaway shell. Install it as a higher-priority alternative; Yaru stays installed:
+
+```bash
+sudo install -D -m644 gdm/build/gnome-shell-theme.gresource /usr/share/gnome-shell/theme/Mist/gnome-shell-theme.gresource
+sudo update-alternatives --install /usr/share/gnome-shell/gdm-theme.gresource gdm-theme.gresource /usr/share/gnome-shell/theme/Mist/gnome-shell-theme.gresource 25
+```
+
+Undo: `sudo update-alternatives --remove gdm-theme.gresource /usr/share/gnome-shell/theme/Mist/gnome-shell-theme.gresource`.
+The login screen shows a snapshot of the wallpaper from when you ran `gdm/build.sh`; run the build and the install again after changing it.
+After a Yaru update, rebuild so the login theme picks up Yaru's changes.

@@ -58,11 +58,12 @@ export default class Mist extends Extension {
         });
 
         // the wallpaper decides the colours: restyle whenever it, or light/dark, changes
-        const restyle = () => this._restyle();
+        // A new wallpaper also sets light or dark for the whole desktop. Switching light/dark alone only restyles:
+        // if the light and dark wallpapers differ, flipping again would never settle.
         for (const key of ['picture-uri', 'picture-uri-dark', 'picture-options', 'primary-color'])
-            this._ids.push([this._bg, this._bg.connect(`changed::${key}`, restyle)]);
-        this._ids.push([this._iface, this._iface.connect('changed::color-scheme', restyle)]);
-        this._restyle();
+            this._ids.push([this._bg, this._bg.connect(`changed::${key}`, () => this._restyle(true))]);
+        this._ids.push([this._iface, this._iface.connect('changed::color-scheme', () => this._restyle(false))]);
+        this._restyle(true);
     }
 
     disable() {
@@ -77,9 +78,14 @@ export default class Mist extends Extension {
         this._bg = this._iface = this._left = this._big = this._time = this._dots = this._app = this._bigTime = this._bigDate = this._hidden = this._clock = null;
     }
 
-    _restyle() {
+    _restyle(follow) {
         const {pixels, top} = sample(this._bg, this._iface);
         this._palette = paletteFrom(pixels, top);
+        if (follow) {
+            const scheme = this._palette.dark ? 'prefer-dark' : 'default';
+            if (this._iface.get_string('color-scheme') !== scheme)
+                this._iface.set_string('color-scheme', scheme);   // its change handler restyles once more, without following
+        }
         const dir = GLib.build_filenamev([GLib.get_user_cache_dir(), 'mist']);
         GLib.mkdir_with_parents(dir, 0o755);
         // a new file name each time: the shell caches a stylesheet by path

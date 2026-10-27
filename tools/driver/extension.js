@@ -58,6 +58,8 @@ export default class MistDriver extends Extension {
             bar: bgOf(panel), text: fgOf(clocks[0]),
             card: hex(bgOf(quick.menu.box)), cardText: fgOf(quick.menu.box),
         });
+        const ifaceStart = new Gio.Settings({schema_id: 'org.gnome.desktop.interface'}).get_string('color-scheme');
+        log(`scheme at start ${ifaceStart}`);
         const a = ctx();
         log(`state ${JSON.stringify(a)}`);
         check('the bar has no background of its own on a clear wallpaper', a.bar.alpha === 0, `alpha ${a.bar.alpha}`);
@@ -88,6 +90,8 @@ export default class MistDriver extends Extension {
             log(`state after ${JSON.stringify(b)}`);
             check('a different wallpaper restyles the card', b.card !== a.card, `${a.card} -> ${b.card}`);
             check('and flips light/dark when the wallpaper does', (lum(b.card) < 0.2) !== dark);
+            const iface = new Gio.Settings({schema_id: 'org.gnome.desktop.interface'});
+            check('GNOME light/dark follows the wallpaper', iface.get_string('color-scheme') === (lum(b.card) < 0.2 ? 'prefer-dark' : 'default'), iface.get_string('color-scheme'));
             await screenshot('desktop2');
             quick.menu.open();
             await sleep(1200);

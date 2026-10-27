@@ -68,6 +68,9 @@ export default class MistDriver extends Extension {
         log(`card is ${dark ? 'dark' : 'light'}`);
         check('card text reads on the card', Math.abs(lum(a.card) - lum(a.cardText)) > 0.5);
 
+        const login = new Gio.Settings({schema_id: 'com.ubuntu.login-screen'});
+        const startup = login.get_string('background-color');
+        check('the start-up colour is set to the wallpaper average, not left to the stock grey', /^#[0-9A-F]{6}$/.test(startup), startup);
         await screenshot('desktop');
         quick.menu.open();
         await sleep(1200);

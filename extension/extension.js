@@ -22,6 +22,9 @@ export default class Mist extends Extension {
         this._sheet = null;
         this._ids = [];
         this._coucou = new CoucouSync();
+        // Ubuntu only: the schema is missing elsewhere
+        const schema = Gio.SettingsSchemaSource.get_default().lookup('com.ubuntu.login-screen', true);
+        this._login = schema ? new Gio.Settings({settings_schema: schema}) : null;
 
         const panel = Main.panel;
         this._hidden = [panel.statusArea.activities, panel.statusArea.dateMenu];
@@ -78,7 +81,7 @@ export default class Mist extends Extension {
         this._left?.destroy();
         this._big?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._coucou = this._bg = this._iface = this._left = this._big = this._time = this._dots = this._app = this._bigTime = this._bigDate = this._hidden = this._clock = null;
+        this._login = this._coucou = this._bg = this._iface = this._left = this._big = this._time = this._dots = this._app = this._bigTime = this._bigDate = this._hidden = this._clock = null;
     }
 
     _restyle(follow) {
@@ -90,6 +93,9 @@ export default class Mist extends Extension {
                 this._iface.set_string('color-scheme', scheme);   // its change handler restyles once more, without following
         }
         this._coucou.sync(this._palette.ink);   // Coucou's island wears the card colour
+        // the colour the shell paints while it starts up, before the wallpaper is ready: the wallpaper's own average, not stock grey
+        if (this._login)
+            this._login.set_string('background-color', this._palette.average);
         const dir = GLib.build_filenamev([GLib.get_user_cache_dir(), 'mist']);
         GLib.mkdir_with_parents(dir, 0o755);
         // a new file name each time: the shell caches a stylesheet by path

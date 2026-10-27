@@ -67,4 +67,9 @@ test('the big clock reads on its own patch of wallpaper, whatever the top edge l
     eq(luminance(q.clock.text) < 0.1, true);
 });
 
+test('the average is the wallpaper\'s mean colour', () => {
+    eq(paletteFrom([[0, 0, 0], [100, 50, 20]]).average, '#32190A');
+    eq(paletteFrom(flat(220, 226, 230)).average, '#DCE2E6');
+});
+
 done();

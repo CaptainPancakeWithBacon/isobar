@@ -1,0 +1,6 @@
+{
+  "uuid": "mist@gijs.dev",
+  "name": "Mist",
+  "description": "A quiet shell that takes its colours from your wallpaper: a slim strip, a big clock, light cards.",
+  "shell-version": ["50"]
+}

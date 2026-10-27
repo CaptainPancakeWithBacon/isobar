@@ -11,11 +11,11 @@ export function wallpaperFile(bg, iface) {
     return uri ? Gio.File.new_for_uri(uri) : null;
 }
 
-/** {pixels, top}: the whole picture and its top band, or one flat colour when there is no readable picture. */
+/** {pixels, top, clock}: the whole picture, its top band and the patch under the clock, or one flat colour when there is no readable picture. */
 export function sample(bg, iface) {
     const flat = hex => {
         const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-        return {pixels: [c], top: [c]};
+        return {pixels: [c], top: [c], clock: [c]};
     };
     const file = bg.get_string('picture-options') === 'none' ? null : wallpaperFile(bg, iface);
     const path = file?.get_path();
@@ -25,7 +25,7 @@ export function sample(bg, iface) {
         // a stretched copy of the picture; fine for averages, and cheap
         const pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, W, H, false);
         const px = pb.get_pixels(), n = pb.get_n_channels(), stride = pb.get_rowstride();
-        const pixels = [], top = [];
+        const pixels = [], top = [], clock = [];
         for (let y = 0; y < pb.get_height(); y++) {
             for (let x = 0; x < pb.get_width(); x++) {
                 const i = y * stride + x * n;
@@ -33,9 +33,12 @@ export function sample(bg, iface) {
                 pixels.push(c);
                 if (y < Math.max(2, Math.round(pb.get_height() * 0.1)))
                     top.push(c);
+                // where the big clock sits: top left, below the bar
+                if (y >= pb.get_height() * 0.03 && y < pb.get_height() * 0.24 && x >= pb.get_width() * 0.03 && x < pb.get_width() * 0.28)
+                    clock.push(c);
             }
         }
-        return {pixels, top};
+        return {pixels, top, clock: clock.length ? clock : top};
     } catch (e) {
         // dynamic .xml wallpapers and broken files: fall back to the flat colour
         return flat(bg.get_string('primary-color') || '#808080');

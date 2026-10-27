@@ -57,4 +57,14 @@ test('a grey wallpaper does not invent a hue', () => {
     eq(toHsl([...p.ink.slice(1).match(/../g)].map(x => parseInt(x, 16)))[1] < 0.1, true);
 });
 
+test('the big clock reads on its own patch of wallpaper, whatever the top edge looks like', () => {
+    const sky = flat(235, 240, 245), hills = flat(25, 40, 30);
+    const p = paletteFrom([...sky, ...hills], sky, hills);
+    eq(luminance(p.bar.text) < 0.1, true);       // the bar sits on sky: dark text
+    eq(luminance(p.clock.text) > 0.7, true);     // the clock sits on hills: light text
+    eq(p.clock.shadow.startsWith('rgba(0'), true);
+    const q = paletteFrom([...sky, ...hills], hills, sky);
+    eq(luminance(q.clock.text) < 0.1, true);
+});
+
 done();

@@ -13,6 +13,7 @@ export function mistCss(p) {
 /* Mist: the bar sits straight on the wallpaper. !important because Ubuntu's Yaru stylesheet paints it black. */
 #panel,
 #panel:overview {
+    height: 28px !important;
     background-color: ${bar} !important;
     background-gradient-direction: none !important;
     box-shadow: none !important;
@@ -77,12 +78,15 @@ StLabel.hint-text,
 .mist-bigclock {
     font-size: 132px;
     font-weight: 200;
-    color: ${text};
+    color: ${p.clock.text};
+    text-shadow: 0 2px 22px ${p.clock.shadow};
 }
 
 .mist-bigdate {
     font-size: 19px;
-    color: ${muted};
+    font-weight: 500;
+    color: ${p.clock.muted};
+    text-shadow: 0 1px 12px ${p.clock.shadow};
 }
 `;
 }

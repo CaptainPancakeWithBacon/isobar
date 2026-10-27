@@ -58,7 +58,7 @@ export const DARK_BELOW = 0.2;   // WCAG luminance of the wallpaper's average; m
  * Returns the palette: surface roles (ink, paper, track, hover, muted) for cards and menus,
  * and the colours for the bar itself, which sits straight on the wallpaper.
  */
-export function paletteFrom(pixels, top = pixels) {
+export function paletteFrom(pixels, top = pixels, clock = top) {
     const avg = mean(pixels);
     const hue = dominantHue(pixels) ?? toHsl(avg)[0];
     const chroma = clamp(toHsl(avg)[1], 0.06, 0.26);
@@ -78,10 +78,21 @@ export function paletteFrom(pixels, top = pixels) {
     const barText = {text, muted: useDark ? tint(0.6, 0.30) : tint(0.4, 0.80)};
     const veil = contrast(text, band) >= 4.5 ? 0 : 0.55;
 
+    // the big clock sits on its own patch of wallpaper, which is rarely what the top edge looks like.
+    // It gets a soft shadow in the opposite tone: a painting is never one flat colour.
+    const patch = hexOf(mean(clock));
+    const clockDark = contrast(darkText, patch) >= contrast(lightText, patch);
+    const clockText = {
+        text: clockDark ? darkText : lightText,
+        muted: clockDark ? tint(0.6, 0.22) : tint(0.4, 0.88),
+        shadow: clockDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.5)',
+    };
+
     return {
         ...surface, dark, hue: Math.round(hue), name: 'Mist',
         // the same shape the shell template wants for the rest
         ground: band, minor: surface.hover, major: surface.muted, dot: barText.muted,
         bar: {...barText, veil, veilColor: useDark ? tint(0.7, 0.965) : tint(0.9, 0.14)},
+        clock: clockText,
     };
 }

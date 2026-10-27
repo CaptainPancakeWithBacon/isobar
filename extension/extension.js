@@ -10,6 +10,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {paletteFrom} from './lib/palette.js';
 import {sample} from './lib/wallpaper.js';
 import {mistCss} from './lib/mist-css.js';
+import {CoucouSync} from './lib/coucou.js';
 
 const DOT = 6;
 const LONG = 20;
@@ -20,6 +21,7 @@ export default class Mist extends Extension {
         this._iface = new Gio.Settings({schema_id: 'org.gnome.desktop.interface'});
         this._sheet = null;
         this._ids = [];
+        this._coucou = new CoucouSync();
 
         const panel = Main.panel;
         this._hidden = [panel.statusArea.activities, panel.statusArea.dateMenu];
@@ -72,20 +74,22 @@ export default class Mist extends Extension {
         if (this._clock)
             GLib.source_remove(this._clock);
         this._unload();
+        this._coucou?.destroy();
         this._left?.destroy();
         this._big?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._bg = this._iface = this._left = this._big = this._time = this._dots = this._app = this._bigTime = this._bigDate = this._hidden = this._clock = null;
+        this._coucou = this._bg = this._iface = this._left = this._big = this._time = this._dots = this._app = this._bigTime = this._bigDate = this._hidden = this._clock = null;
     }
 
     _restyle(follow) {
-        const {pixels, top} = sample(this._bg, this._iface);
-        this._palette = paletteFrom(pixels, top);
+        const {pixels, top, clock} = sample(this._bg, this._iface);
+        this._palette = paletteFrom(pixels, top, clock);
         if (follow) {
             const scheme = this._palette.dark ? 'prefer-dark' : 'default';
             if (this._iface.get_string('color-scheme') !== scheme)
                 this._iface.set_string('color-scheme', scheme);   // its change handler restyles once more, without following
         }
+        this._coucou.sync(this._palette.ink);   // Coucou's island wears the card colour
         const dir = GLib.build_filenamev([GLib.get_user_cache_dir(), 'mist']);
         GLib.mkdir_with_parents(dir, 0o755);
         // a new file name each time: the shell caches a stylesheet by path

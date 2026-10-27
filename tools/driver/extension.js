@@ -54,6 +54,7 @@ export default class MistDriver extends Extension {
         check('the big clock is on the desktop', find(Main.layoutManager._backgroundGroup, 'mist-bigclock').length === 1);
         check('one dot per workspace', find(panel, 'mist-dot').length === global.workspace_manager.n_workspaces);
 
+        check('the bar is no taller than the 28 px Coucou leaves for it', panel.height <= 28, `${panel.height} px`);
         const ctx = () => ({
             bar: bgOf(panel), text: fgOf(clocks[0]),
             card: hex(bgOf(quick.menu.box)), cardText: fgOf(quick.menu.box),

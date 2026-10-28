@@ -8,8 +8,10 @@ SRC=${MIST_YARU_GRESOURCE:-/usr/share/gnome-shell/theme/Yaru/gnome-shell-theme.g
 OUT="$HERE/build"
 rm -rf "$OUT" && mkdir -p "$OUT/root"
 
-WALL=${1:-$(gsettings get org.gnome.desktop.background picture-uri-dark | sed "s|^'file://||; s|'$||")}
-[ -f "$WALL" ] || WALL=$(gsettings get org.gnome.desktop.background picture-uri | sed "s|^'file://||; s|'$||")
+# a gsettings file URI as a path, with %20 and friends decoded
+uri_path() { gsettings get org.gnome.desktop.background "$1" | sed "s|^'file://||; s|'$||" | python3 -c 'import sys, urllib.parse as u; print(u.unquote(sys.stdin.read().strip()))'; }
+WALL=${1:-$(uri_path picture-uri-dark)}
+[ -f "$WALL" ] || WALL=$(uri_path picture-uri)
 [ -f "$WALL" ] || { echo "no wallpaper image to use: $WALL" >&2; exit 1; }
 
 # every file of Yaru's theme, same paths

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Isobar, the adaptive GNOME interface</title>
+<meta name="description" content="Isobar takes its colours from your wallpaper: a slim strip, a big clock, cards that go light or dark with the picture, and apps, icons and a dock that follow. A GNOME 50 extension.">
+<meta property="og:title" content="Isobar, the adaptive GNOME interface">
+<meta property="og:description" content="Your wallpaper picks the colours. Isobar does the rest.">
+<meta property="og:image" content="https://captainpancakewithbacon.github.io/isobar/media/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#101418">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="site.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a href="#top" aria-label="Isobar">{{LOGO_HORIZONTAL}}</a>
+    <nav aria-label="Main">
+      <a href="#demo">Demo</a><a href="#screens">Screens</a><a href="#how">How it works</a><a href="#install">Install</a><a class="gh" href="https://github.com/CaptainPancakeWithBacon/isobar">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="top">
+  <div class="hero">
+    {{MARK_ARCS}}
+    <h1>Your wallpaper picks the <em>colours.</em></h1>
+    <p class="lead">Isobar is the adaptive GNOME interface. A slim strip, a big clock, cards that go light or dark with the picture, and apps, icons, a dock and even the terminal that follow along. Everything is derived from the wallpaper you already have.</p>
+    <div class="cta">
+      <a class="btn" href="#install">Install it</a>
+      <a class="btn ghost" href="https://github.com/CaptainPancakeWithBacon/isobar">View on GitHub</a>
+    </div>
+  </div>
+
+  <section id="demo" style="padding-top:44px" aria-labelledby="demo-h">
+    <h2 id="demo-h" class="sr" style="position:absolute;left:-9999px">Live demo</h2>
+    <div class="demo">
+      <div class="desk" id="desk" role="img" aria-label="A demo desktop that recolours itself to the chosen wallpaper">
+        <div class="strip"><div class="l"><span class="t" data-clock>10:24</span><span class="dots"><i class="on"></i><i></i><i></i></span><span>Files</span></div><div class="r"><span>Wi-Fi</span><span>92%</span></div></div>
+        <div class="big"><b data-clock>10:24</b><span data-date>Wednesday 28 October</span></div>
+        <div class="qs">
+          <div class="batt">92%<small>6 h 12 min left</small></div>
+          <div class="tiles"><div class="tile on">Wi-Fi<small>Home</small></div><div class="tile">Bluetooth<small>Off</small></div><div class="tile">Dark style<small data-mode>On</small></div><div class="tile">Do not disturb<small>Off</small></div></div>
+          <div class="sl">Volume <u style="--v:38%"></u></div>
+          <div class="sl">Brightness <u style="--v:74%"></u></div>
+        </div>
+        <div class="dock"><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+      <div class="pick" id="pick" role="group" aria-label="Choose a wallpaper"></div>
+      <p class="note">Pick a wallpaper, or use your own picture. It is read in your browser and never uploaded. The page you are looking at is recoloured by the same palette code the extension runs.</p>
+      <div class="read" id="read" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="screens" aria-labelledby="screens-h">
+    <h2 id="screens-h">One picture, the whole desktop.</h2>
+    <p class="sub">Real screenshots from a headless GNOME Shell 50 session. The same extension, three different wallpapers. Nothing here is edited.</p>
+    <div class="trio">
+      <figure><img src="media/desk-mist.webp" alt="Isobar on a pale blue-grey wallpaper: dark text, light cards" width="1600" height="1000" loading="lazy"><figcaption>Mist: a pale wallpaper gives dark text and light cards.</figcaption></figure>
+      <figure><img src="media/desk-dusk.webp" alt="Isobar on a warm pink wallpaper" width="1600" height="1000" loading="lazy"><figcaption>Dusk: the cards pick up the pink, softly.</figcaption></figure>
+      <figure><img src="media/desk-night.webp" alt="Isobar on a dark navy wallpaper: light text, dark cards" width="1600" height="1000" loading="lazy"><figcaption>Night: a dark wallpaper flips everything to dark.</figcaption></figure>
+    </div>
+    <div class="grid g3">
+      <article class="card"><img class="shot" src="media/quick-dusk.webp" alt="The quick settings card on the dusk wallpaper" width="1600" height="1000" loading="lazy"><h3>The strip and quick settings</h3><p>A transparent 28 px strip with the time, workspace dots and the app in front. Its text is dark or light, whichever reads better on the top of your wallpaper, and a soft veil appears only when neither does.</p><p>The quick settings card, menus, calendar and dialogs are cards tinted with the wallpaper's hue.</p></article>
+      <article class="card"><img class="shot" src="media/overview-night.webp" alt="The overview on the night wallpaper" width="1600" height="1000" loading="lazy"><h3>Overview, search and the dock</h3><p>The overview, search, notifications and the dock all sit on the same card colour. The dock is a floating pill that hides when windows get in its way, and Isobar carries its settings with it.</p></article>
+      <article class="card"><img class="shot" src="media/app-mist.webp" alt="GNOME Calculator restyled by Isobar" width="1600" height="1000" loading="lazy"><h3>Your apps</h3><p>GNOME's own apps (Files, Settings, Calculator, Text Editor and the rest of the libadwaita family) get the wallpaper's colours and Isobar's shape language: soft radii, flat headers, round controls and thin sliders. Light and dark switch live, even in open windows.</p></article>
+    </div>
+  </section>
+
+  <section id="features" aria-labelledby="features-h">
+    <h2 id="features-h">Small things that follow too.</h2>
+    <div class="grid g3">
+      <article class="card"><h3>Icons and pointer</h3><p>If you use Papirus, it swaps between Papirus-Light and Papirus-Dark with the scheme. The pointer goes DMZ-Black on light and DMZ-White on dark. Any other icon or cursor theme is left alone.</p></article>
+      <article class="card"><h3>No grey flash</h3><p>GNOME paints a stock grey while it starts. On Ubuntu that colour is a setting, so Isobar keeps it at your wallpaper's average and the desktop fades in from a matching tone.</p></article>
+      <article class="card"><h3>Light or dark, automatically</h3><p>Change the wallpaper and GNOME's light/dark preference follows its brightness, so GTK and libadwaita apps flip with it.</p></article>
+      <article class="card"><h3>The dock comes along</h3><p>Position, hiding, icon size and opacity are part of Isobar. It remembers what you had, restores it when you switch Isobar off, and reads overrides from <code>~/.config/isobar/dock.json</code>.</p></article>
+      <article class="card"><h3>Login screen</h3><p>An optional login theme built from Ubuntu's own, with your wallpaper darkened and blurred, no Ubuntu logo and a soft name card. It is installed as an alternative, so Ubuntu's stays one command away.</p></article>
+      <article class="card"><h3>Coucou</h3><p>If you run Coucou, its island can wear the card colour too. It is opt-in, writes one setting and restarts Coucou once when the colour changes.</p></article>
+    </div>
+  </section>
+
+  <section id="how" aria-labelledby="how-h">
+    <h2 id="how-h">How it works.</h2>
+    <p class="sub">No machine learning and no network. A small, tested piece of arithmetic, written once and used in the extension, in the tests and in the demo above.</p>
+    <ol class="steps">
+      <li><h3>Sample</h3><p>The wallpaper is shrunk to a 48 by 30 thumbnail. Three regions matter: all of it, the band under the bar, and the patch under the big clock.</p></li>
+      <li><h3>Decide</h3><p>The hue is the circular mean of the saturated pixels; grey pixels get no say. Light or dark comes from the picture's brightness. Cards, text, a muted tone and an accent follow.</p></li>
+      <li><h3>Check</h3><p>Body text keeps at least 7 to 1 against its card, muted text and the accent at least 4.5 to 1, and white on the accent stays readable. Unit tests cover every hue.</p></li>
+      <li><h3>Apply</h3><p>One shell stylesheet, one GTK stylesheet with light and dark blocks, and a few settings. It runs again when the wallpaper or the light/dark preference changes.</p></li>
+    </ol>
+  </section>
+
+  <section id="terminal" aria-labelledby="terminal-h">
+    <h2 id="terminal-h">Even the terminal.</h2>
+    <p class="sub">The mark is also a logo for <code>fastfetch</code>, drawn with block characters from the real symbol. <code>isobar-fetch</code> prints it in your wallpaper's accent colour.</p>
+    <div class="terminal grid"><img src="media/terminal.png" alt="fastfetch showing the Isobar logo in green next to system information" width="1200" height="508" loading="lazy"></div>
+    <pre><button type="button" data-copy>Copy</button><span class="c"># installed by the repo's brand/terminal folder</span>
+isobar-fetch            <span class="c"># small logo</span>
+isobar-fetch --big      <span class="c"># large logo</span></pre>
+  </section>
+
+  <section id="install" aria-labelledby="install-h">
+    <h2 id="install-h">Install.</h2>
+    <p class="sub">Isobar is an extension for <strong>GNOME Shell 50</strong> on Wayland, written and tested on Ubuntu 26.04. It touches only the settings listed below, and switching it off puts the dock and the app colours back.</p>
+    <pre><button type="button" data-copy>Copy</button>git clone https://github.com/CaptainPancakeWithBacon/isobar.git
+cd isobar
+tools/install.sh               <span class="c"># links the extension, enables nothing</span>
+<span class="c"># log out and back in once, then:</span>
+gnome-extensions enable mist@gijs.dev</pre>
+    <p class="note" style="margin-top:12px">The extension id is still <code>mist@gijs.dev</code>, the project's working name.</p>
+    <h3 style="margin-top:34px;font-weight:600;font-size:20px">What it changes</h3>
+    <table>
+      <thead><tr><th>Where</th><th>What Isobar does</th></tr></thead>
+      <tbody>
+        <tr><td>GNOME Shell</td><td>Hides Activities and the date menu, adds the clock, dots and app name to the bar, pins the bar to 28 px, restyles the shell with one stylesheet.</td></tr>
+        <tr><td>org.gnome.desktop.interface</td><td><code>color-scheme</code> follows the wallpaper's brightness when it changes. <code>icon-theme</code> and <code>cursor-theme</code> swap only if you already use Papirus or DMZ.</td></tr>
+        <tr><td>~/.config/gtk-4.0/</td><td>Writes <code>mist.css</code> and adds one import line to your <code>gtk.css</code>. Switching Isobar off removes both.</td></tr>
+        <tr><td>org.gnome.shell.extensions.dash-to-dock</td><td>The dock profile: position, hiding, icon size, opacity. Remembered and restored. Override in <code>~/.config/isobar/dock.json</code>, or <code>{"manage": false}</code> to leave the dock alone.</td></tr>
+        <tr><td>com.ubuntu.login-screen</td><td>Ubuntu only: <code>background-color</code> is kept at the wallpaper's average.</td></tr>
+        <tr><td>~/.cache/isobar/</td><td>The current accent colour, for the terminal logo.</td></tr>
+        <tr><td>Coucou (opt-in)</td><td>Only if <code>~/.config/mist/coucou</code> exists: its island colour, with one restart per change.</td></tr>
+      </tbody>
+    </table>
+    <h3 style="margin-top:34px;font-weight:600;font-size:20px">Undo</h3>
+    <pre><button type="button" data-copy>Copy</button>gnome-extensions disable mist@gijs.dev    <span class="c"># restores the dock, removes the app colours</span>
+rm ~/.local/share/gnome-shell/extensions/mist@gijs.dev</pre>
+  </section>
+
+  <section id="brand" aria-labelledby="brand-h">
+    <h2 id="brand-h">The mark has no colour of its own.</h2>
+    <p class="sub">A solid half disc whose other half dissolves into contour lines: light and dark in one shape, drawn with the lines of an isobar map. In Isobar's own interface it wears the wallpaper's accent. Where it cannot adapt, it is ink or paper.</p>
+    <div class="logos">
+      <div>{{MARK_MASTER}}<span>master, 48 px and up</span></div>
+      <div>{{MARK_SMALL}}<span>small cut, 24 to 47 px</span></div>
+      <div>{{MARK_FAVICON}}<span>favicon cut, under 24 px</span></div>
+      <div>{{LOGO_STACKED}}<span>stacked</span></div>
+    </div>
+    <div class="swatches">
+      <div class="sw" style="background:#101418;color:#F6F8F9">Ink<br>#101418</div>
+      <div class="sw" style="background:#F6F8F9;color:#101418">Paper<br>#F6F8F9</div>
+      <div class="sw" style="background:#DDE2E6;color:#101418">Fog<br>#DDE2E6</div>
+      <div class="sw" style="background:#4A5764;color:#F6F8F9">Slate<br>#4A5764</div>
+    </div>
+    <p class="note" style="margin-top:14px">Logo files, guidelines and a presentation board are in the repository's <a href="https://github.com/CaptainPancakeWithBacon/isobar/tree/main/brand">brand</a> folder.</p>
+  </section>
+
+  <section id="status" aria-labelledby="status-h">
+    <h2 id="status-h">Early, personal and honest.</h2>
+    <div class="grid g2">
+      <article class="card"><h3>What is checked</h3><p>Unit tests for the palette, the GTK stylesheet, the dock profile and the Coucou sync. A headless GNOME Shell 50 test that loads the extension, changes the wallpaper, opens apps, and checks colours, the bar height, the dock and the restore path. Every screenshot above comes from it.</p></article>
+      <article class="card"><h3>What is not</h3><p>It has run on one laptop. GTK3 apps are not restyled yet. Blur My Shell can override themes, so switch off its panel and popup styling. The extra bars of Multi-Monitors Bar are not styled. The login theme is a snapshot of the wallpaper from when you built it.</p></article>
+    </div>
+  </section>
+  </main>
+
+  <footer>
+    <span style="display:flex;align-items:center;gap:12px">{{MARK_FOOTER}} Isobar, the adaptive GNOME interface. MIT licensed.</span>
+    <span><a href="https://github.com/CaptainPancakeWithBacon/isobar">Source on GitHub</a> · <a href="https://github.com/CaptainPancakeWithBacon/isobar-contour">The older contour-map Isobar</a></span>
+  </footer>
+</div>
+</body>
+</html>

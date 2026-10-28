@@ -4,5 +4,7 @@
   "description": "The adaptive GNOME interface: it takes its colours from your wallpaper. A slim strip, a big clock, cards that go light or dark with the picture.",
   "shell-version": [
     "50"
-  ]
+  ],
+  "version": 1,
+  "version-name": "0.1.0"
 }

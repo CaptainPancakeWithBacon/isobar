@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# One line for fastfetch (or your prompt): is Isobar running, and which version.
+#   active, v0.1.0  |  installed, off, v0.1.0  |  not installed
+uuid=mist@gijs.dev
+dir="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$uuid"
+[ -f "$dir/metadata.json" ] || { echo "not installed"; exit 0; }
+# the version is read from the file, so it is right even before the shell has reloaded the extension
+version=$(sed -n 's/.*"version-name": *"\([^"]*\)".*/\1/p' "$dir/metadata.json")
+state=$(gnome-extensions info "$uuid" 2>/dev/null | sed -n 's/^ *State: *//p')
+case "$state" in
+    ACTIVE) label=active ;;
+    ERROR)  label=error ;;
+    *)      label="installed, off" ;;
+esac
+echo "$label${version:+, v$version}"

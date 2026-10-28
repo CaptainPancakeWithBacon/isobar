@@ -12,6 +12,7 @@ import {sample} from './lib/wallpaper.js';
 import {mistCss} from './lib/mist-css.js';
 import {CoucouSync} from './lib/coucou.js';
 import {gtkCss} from './lib/gtk-css.js';
+import {Dock} from './lib/dock.js';
 import {applyGtk, removeGtk} from './lib/gtk.js';
 
 const DOT = 6;
@@ -24,6 +25,8 @@ export default class Mist extends Extension {
         this._sheet = null;
         this._ids = [];
         this._coucou = new CoucouSync();
+        this._dock = new Dock();
+        this._dock.apply();   // position, hiding, size, opacity: the dock comes with Isobar
         // Ubuntu only: the schema is missing elsewhere
         const schema = Gio.SettingsSchemaSource.get_default().lookup('com.ubuntu.login-screen', true);
         this._login = schema ? new Gio.Settings({settings_schema: schema}) : null;
@@ -79,12 +82,16 @@ export default class Mist extends Extension {
         if (this._clock)
             GLib.source_remove(this._clock);
         this._unload();
-        removeGtk();
+        // GNOME also disables extensions while the screen is locked; that must not undo the dock or the app colours
+        if (Main.sessionMode.currentMode !== 'unlock-dialog') {
+            removeGtk();
+            this._dock?.restore();
+        }
         this._coucou?.destroy();
         this._left?.destroy();
         this._big?.destroy();
         this._hidden?.forEach(item => item.container.show());
-        this._login = this._coucou = this._bg = this._iface = this._left = this._big = this._time = this._dots = this._app = this._bigTime = this._bigDate = this._hidden = this._clock = null;
+        this._dock = this._login = this._coucou = this._bg = this._iface = this._left = this._big = this._time = this._dots = this._app = this._bigTime = this._bigDate = this._hidden = this._clock = null;
     }
 
     _restyle(follow) {

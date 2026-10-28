@@ -55,6 +55,11 @@ export default class MistDriver extends Extension {
         check('one dot per workspace', find(panel, 'mist-dot').length === global.workspace_manager.n_workspaces);
 
         check('the bar is no taller than the 28 px Coucou leaves for it', panel.height <= 28, `${panel.height} px`);
+        const dockSettings = new Gio.Settings({schema_id: 'org.gnome.shell.extensions.dash-to-dock'});
+        const wantPos = GLib.getenv('MIST_DOCK_JSON') ? JSON.parse(GLib.getenv('MIST_DOCK_JSON'))['dock-position'] ?? 'BOTTOM' : 'BOTTOM';
+        check('the dock took Isobar\'s position', dockSettings.get_string('dock-position') === wantPos, dockSettings.get_string('dock-position'));
+        if (!GLib.getenv('MIST_DOCK_JSON'))
+            check('the dock took Isobar\'s hiding behaviour', dockSettings.get_boolean('autohide') && dockSettings.get_boolean('intellihide') && !dockSettings.get_boolean('dock-fixed'));
         const ctx = () => ({
             bar: bgOf(panel), text: fgOf(clocks[0]),
             card: hex(bgOf(quick.menu.box)), cardText: fgOf(quick.menu.box),
@@ -90,9 +95,14 @@ export default class MistDriver extends Extension {
         check('the GTK stylesheet is written, with a light and a dark window colour', (mist1.match(/@define-color window_bg_color #[0-9A-F]{6};/g) ?? []).length === 2);
         check('the accent colour is written for the terminal logo', /^#[0-9A-F]{6}\n$/.test(read(`${GLib.get_user_cache_dir()}/isobar/accent`)), read(`${GLib.get_user_cache_dir()}/isobar/accent`).trim());
         check('gtk.css imports it', read(`${cfg}/gtk-4.0/gtk.css`).includes('mist.css'));
-        GLib.spawn_command_line_async('nautilus --new-window');
+        GLib.spawn_command_line_async(GLib.getenv('MIST_APP_CMD') ?? 'nautilus --new-window');
         await sleep(6000);
         await screenshot('app');
+        Main.overview.show();
+        await sleep(2000);
+        await screenshot('overview-app');   // the overview with a window in it
+        Main.overview.hide();
+        await sleep(1200);
 
         // the wallpaper changes: the palette must follow
         const other = GLib.getenv('MIST_WALLPAPER_2');
@@ -121,6 +131,20 @@ export default class MistDriver extends Extension {
             await sleep(1200);
             await screenshot('quick2');
             quick.menu.close();
+        }
+
+        // switching Isobar off gives the dock back as it was; switching it on again takes it over again
+        if (!GLib.getenv('MIST_DOCK_JSON')) {
+            const savedPath = `${GLib.get_user_cache_dir()}/isobar/dock-previous.json`;
+            const saved = JSON.parse(new TextDecoder().decode(GLib.file_get_contents(savedPath)[1]));
+            check('the dock\'s old settings were remembered', 'dock-position' in saved, JSON.stringify(saved).slice(0, 90));
+            Main.extensionManager.disableExtension('mist@gijs.dev');
+            await sleep(1500);
+            check('disabling Isobar restores the dock', dockSettings.get_string('dock-position') === saved['dock-position'], dockSettings.get_string('dock-position'));
+            check('and clears the memory file', !GLib.file_test(savedPath, GLib.FileTest.EXISTS));
+            Main.extensionManager.enableExtension('mist@gijs.dev');
+            await sleep(2500);
+            check('enabling it again takes the dock back', dockSettings.get_string('dock-position') === 'BOTTOM', dockSettings.get_string('dock-position'));
         }
     }
 }

@@ -19,8 +19,12 @@ gsettings set org.gnome.desktop.interface icon-theme "${MIST_ICON_THEME:-Papirus
 gsettings set org.gnome.desktop.interface cursor-theme "${MIST_CURSOR_THEME:-DMZ-Black}"
 # MIST_DCONF="/path/key=value ...": settings to write first, for example the dock
 for pair in ${MIST_DCONF:-}; do dconf write "${pair%%=*}" "${pair#*=}"; done
+# MIST_DISABLE_EXT="uuid ...": switch these default extensions off (for example the desktop icons, for cleaner screenshots)
+DIS=""; for u in ${MIST_DISABLE_EXT:-}; do DIS="$DIS, '$u'"; done; gsettings set org.gnome.shell disabled-extensions "[${DIS#, }]"
+# MIST_DOCK_JSON='{"autohide": false}': Isobar's dock override file, for example to keep the dock visible in screenshots
+[ -z "${MIST_DOCK_JSON:-}" ] || { mkdir -p "$XDG_CONFIG_HOME/isobar"; printf %s "$MIST_DOCK_JSON" > "$XDG_CONFIG_HOME/isobar/dock.json"; }
 gsettings set org.gnome.shell enabled-extensions "['mist@gijs.dev', 'mist-driver@gijs.dev']"
-gnome-shell --mode=ubuntu --headless --virtual-monitor 1280x800 &
+gnome-shell --mode=ubuntu --headless --virtual-monitor ${MIST_SIZE:-1280x800} &
 SHELL_PID=$!
 trap 'kill $SHELL_PID 2>/dev/null' EXIT
 for _ in $(seq 120); do [ -e "$MIST_OUT/done" ] && break; sleep 1; done

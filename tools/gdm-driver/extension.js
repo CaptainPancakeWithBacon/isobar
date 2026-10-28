@@ -63,7 +63,7 @@ export default class MistGdmDriver extends Extension {
         view.add_child(list);
         const widget = new St.BoxLayout({style_class: 'user-widget horizontal', style: 'spacing: 12px;'});
         widget.add_child(new St.Icon({icon_name: 'avatar-default-symbolic', icon_size: 48}));
-        widget.add_child(new St.Label({style_class: 'user-widget-label', text: 'Gijs Borghouts', y_align: Clutter.ActorAlign.CENTER}));
+        widget.add_child(new St.Label({style_class: 'user-widget-label', text: 'Your Name', y_align: Clutter.ActorAlign.CENTER}));
         list.add_child(new St.Button({style_class: 'login-dialog-user-list-item', child: widget, reactive: true, can_focus: true}));
         dialog.add_child(view);
         dialog.add_child(new St.Button({style_class: 'login-dialog-not-listed-button', child: new St.Label({style_class: 'login-dialog-not-listed-label', text: 'Not listed?'}), x_align: Clutter.ActorAlign.CENTER}));

@@ -92,6 +92,7 @@ export default class Mist extends Extension {
             if (this._iface.get_string('color-scheme') !== scheme)
                 this._iface.set_string('color-scheme', scheme);   // its change handler restyles once more, without following
         }
+        this._syncIcons();
         this._coucou.sync(this._palette.ink);   // Coucou's island wears the card colour
         // the colour the shell paints while it starts up, before the wallpaper is ready: the wallpaper's own average, not stock grey
         if (this._login)
@@ -105,6 +106,16 @@ export default class Mist extends Extension {
         this._unload();
         theme.load_stylesheet(file);
         this._sheet = file;
+    }
+
+    // Papirus comes in a light and a dark variant: whichever one is in use follows light/dark. Any other icon theme is left alone.
+    _syncIcons() {
+        const current = this._iface.get_string('icon-theme');
+        if (!current.startsWith('Papirus'))
+            return;
+        const want = this._iface.get_string('color-scheme') === 'prefer-dark' ? 'Papirus-Dark' : 'Papirus-Light';
+        if (current !== want)
+            this._iface.set_string('icon-theme', want);
     }
 
     _unload() {

@@ -1,5 +1,6 @@
 // Reads the current wallpaper into the pixels paletteFrom wants. Needs gjs (GdkPixbuf), so it is checked in the shell test.
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import GdkPixbuf from 'gi://GdkPixbuf';
 
 const W = 48, H = 30;
@@ -22,7 +23,19 @@ export function sample(bg, iface) {
     if (!path)
         return flat(bg.get_string('primary-color') || '#808080');
     try {
-        // a stretched copy of the picture; fine for averages, and cheap
+        // Decoding a 4K PNG takes ~250 ms on the shell's main thread, enough to stutter. The result is kept per
+        // picture (path, size, change time), so only a new wallpaper pays; every login and restyle after that reads it back.
+        const info = file.query_info('standard::size,time::modified', Gio.FileQueryInfoFlags.NONE, null);
+        const key = `${path}|${info.get_size()}|${info.get_attribute_uint64('time::modified')}`;
+        const memo = Gio.File.new_for_path(`${GLib.get_user_cache_dir()}/mist/sample.json`);
+        try {
+            const saved = JSON.parse(new TextDecoder().decode(memo.load_contents(null)[1]));
+            if (saved.key === key)
+                return saved.sample;
+        } catch (e) {
+            // no memo yet, or an unreadable one: decode again below
+        }
+        // a stretched copy of the picture; fine for averages
         const pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, W, H, false);
         const px = pb.get_pixels(), n = pb.get_n_channels(), stride = pb.get_rowstride();
         const pixels = [], top = [], clock = [];
@@ -38,7 +51,10 @@ export function sample(bg, iface) {
                     clock.push(c);
             }
         }
-        return {pixels, top, clock: clock.length ? clock : top};
+        const result = {pixels, top, clock: clock.length ? clock : top};
+        GLib.mkdir_with_parents(memo.get_parent().get_path(), 0o755);
+        memo.replace_contents(new TextEncoder().encode(JSON.stringify({key, sample: result})), null, false, Gio.FileCreateFlags.NONE, null);
+        return result;
     } catch (e) {
         // dynamic .xml wallpapers and broken files: fall back to the flat colour
         return flat(bg.get_string('primary-color') || '#808080');

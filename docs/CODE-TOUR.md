@@ -28,7 +28,7 @@ The code between `// @full:start` and `// @full:end` is the dock and Coucou part
 
 ## `extension/lib/wallpaper.js` ★
 
-`sample()` finds the wallpaper file (the dark one when GNOME is in dark mode and a dark wallpaper is set), asks GdkPixbuf to scale it to 48 by 30 pixels, and returns three lists of `[r, g, b]` pixels: the whole picture, the top 10 percent (under the bar), and a patch at the top left (under the big clock). If there is no file, or it cannot be read (an animated `.xml` wallpaper, a broken file), it returns the flat background colour instead. That `try/catch` is the only one in the listing edition.
+`sample()` finds the wallpaper file (the dark one when GNOME is in dark mode and a dark wallpaper is set), asks GdkPixbuf to scale it to 48 by 30 pixels (decoding a 4K PNG takes about 250 ms on the shell's main thread, which stutters, so the result is kept in `~/.cache/mist/sample.json` per picture, keyed by path, size and change time: only a new wallpaper pays), and returns three lists of `[r, g, b]` pixels: the whole picture, the top 10 percent (under the bar), and a patch at the top left (under the big clock). If there is no file, or it cannot be read (an animated `.xml` wallpaper, a broken file), it returns the flat background colour instead. That `try/catch` and the small one around reading the kept result are the only two in the listing edition.
 
 ## `extension/lib/palette.js` ★ (the maths)
 

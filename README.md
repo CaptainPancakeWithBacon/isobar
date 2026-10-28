@@ -1,6 +1,13 @@
-# Isobar
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/horizontal/isobar-horizontal-white.svg">
+    <img alt="Isobar" src="brand/horizontal/isobar-horizontal-black.svg" width="360">
+  </picture>
+</p>
 
-**The adaptive GNOME interface.** A GNOME 50 extension that takes its colours from your wallpaper, at all times.
+<p align="center"><b>The adaptive GNOME interface.</b></p>
+
+Isobar is a GNOME 50 extension that takes its colours from your wallpaper, at all times. The logo has no colour of its own either: see [`brand/`](brand/GUIDELINES.md).
 
 - **Strip:** the top bar has no background. Time, workspace dots and the app in front on the left, the stock quick settings on the right.
 - **Big clock** on the desktop, under the windows.

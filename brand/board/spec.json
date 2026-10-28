@@ -1,0 +1,37 @@
+{
+  "brand": "Isobar",
+  "tagline": "The adaptive GNOME interface",
+  "brief": "An interface layer for GNOME 50 that takes its colours from your wallpaper, at all times: a slim strip, a big clock, cards that go light or dark with the picture. The identity must work on any wallpaper, so the mark has no colour of its own.",
+  "adjectives": ["calm", "quiet", "soft", "adaptive", "personal"],
+  "criteria": "Success: recognisable at 16 px as an extension and tab icon, works in one colour (it will take the wallpaper's), clearly not the old contour-map or island identity.",
+  "industry": "software",
+  "nav": ["Features", "Install", "GitHub"],
+  "brand_color": "#101418",
+  "tile_color": "#101418",
+  "greyscale": false,
+  "final": true,
+  "designer": "Isobar",
+  "round": 2,
+  "concepts": [
+    {
+      "name": "Dusk",
+      "symbol": "isobar-symbol.svg",
+      "lockup": "isobar-horizontal.svg",
+      "stacked": "isobar-stacked.svg",
+      "symbol_on_tile": "isobar-symbol-white.svg",
+      "stacked_on_tile": "isobar-stacked-white.svg",
+      "lockup_on_tile": "isobar-horizontal-white.svg",
+      "symbol_on_dark": "isobar-symbol-white.svg",
+      "lockup_on_dark": "isobar-horizontal-white.svg",
+      "stacked_on_dark": "isobar-stacked-white.svg",
+      "idea": "A solid half disc whose other half dissolves into contour lines: light and dark in one shape, the lines of an isobar map.",
+      "rationale": [
+        "Light and dark in one silhouette, which is exactly what the interface does when the wallpaper changes",
+        "Contour lines keep the Isobar name and the old project's idea, without the island pill",
+        "Reads at 16 px as a half disc with arcs; three cuts (master, small, favicon) are drawn for each size band",
+        "Has no colour of its own: the mark takes the wallpaper's hue"
+      ]
+    }
+  ],
+  "recommendation": "Dusk: the one mark that says light, dark and adaptive in a single shape, and survives 16 px."
+}

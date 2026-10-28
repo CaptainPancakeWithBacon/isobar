@@ -1,4 +1,4 @@
-// What Mist adds on top of the shell template: a bar with no background, a big clock, the dots.
+// What Isobar adds on top of the shell template: a bar with no background, a big clock, the dots.
 import {shellCss} from './shell-css.js';
 
 const alpha = (hex, a) => {
@@ -10,7 +10,7 @@ export function mistCss(p) {
     const {text, muted, veil, veilColor} = p.bar;
     const bar = veil ? alpha(veilColor, veil) : 'transparent';
     return `${shellCss(p)}
-/* Mist: the bar sits straight on the wallpaper. !important because Ubuntu's Yaru stylesheet paints it black. */
+/* Isobar: the bar sits straight on the wallpaper. !important because Ubuntu's Yaru stylesheet paints it black. */
 #panel,
 #panel:overview {
     height: 28px !important;

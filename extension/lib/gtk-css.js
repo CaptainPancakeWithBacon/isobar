@@ -72,7 +72,7 @@ function colours(p) {
 
 /** light and dark: the same wallpaper's palette forced into each mode */
 export function gtkCss(light, dark) {
-    return `/* Mist, generated from your wallpaper. Do not edit: it is rewritten whenever the wallpaper changes. */
+    return `/* Isobar, generated from your wallpaper. Do not edit: it is rewritten whenever the wallpaper changes. */
 @media (prefers-color-scheme: light) {
 ${colours(light)}}
 

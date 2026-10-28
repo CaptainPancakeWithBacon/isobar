@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.isobar" path="/org/gnome/shell/extensions/isobar/">
+    <key name="style-apps" type="b">
+      <default>true</default>
+      <summary>Style GNOME apps</summary>
+      <description>Write a colour file for libadwaita apps to ~/.config/gtk-4.0/mist.css and import it from gtk.css. Both are removed when Isobar is turned off.</description>
+    </key>
+    <key name="follow-scheme" type="b">
+      <default>true</default>
+      <summary>Follow the wallpaper's brightness</summary>
+      <description>Set GNOME's light/dark preference from the brightness of the wallpaper when the wallpaper changes.</description>
+    </key>
+    <key name="swap-icons" type="b">
+      <default>true</default>
+      <summary>Switch Papirus light and dark</summary>
+      <description>If the icon theme is Papirus, switch between Papirus-Light and Papirus-Dark with the light/dark preference. Other icon themes are left alone.</description>
+    </key>
+    <key name="swap-cursor" type="b">
+      <default>true</default>
+      <summary>Switch the DMZ pointer light and dark</summary>
+      <description>If the cursor theme is DMZ, switch between DMZ-Black and DMZ-White with the light/dark preference. Other cursor themes are left alone.</description>
+    </key>
+    <key name="startup-colour" type="b">
+      <default>true</default>
+      <summary>Start-up colour (Ubuntu)</summary>
+      <description>Keep the colour the shell paints while it starts at the wallpaper's average colour. Needs Ubuntu's com.ubuntu.login-screen schema.</description>
+    </key>
+    <key name="terminal-accent" type="b">
+      <default>true</default>
+      <summary>Share the accent colour</summary>
+      <description>Write the current accent colour to ~/.cache/isobar/accent so a terminal logo can use it.</description>
+    </key>
+  </schema>
+</schemalist>

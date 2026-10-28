@@ -1,6 +1,6 @@
-// Puts Mist's colours where libadwaita apps read them: ~/.config/gtk-4.0/gtk.css.
+// Puts Isobar's colours where libadwaita apps read them: ~/.config/gtk-4.0/gtk.css.
 // The colours live in mist.css; the user's own gtk.css only gets one import line, so anything else in it survives,
-// and disabling Mist takes the line (and the file) away again.
+// and disabling Isobar takes the line (and the file) away again.
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 

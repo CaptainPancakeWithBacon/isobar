@@ -23,7 +23,7 @@ for pair in ${MIST_DCONF:-}; do dconf write "${pair%%=*}" "${pair#*=}"; done
 DIS=""; for u in ${MIST_DISABLE_EXT:-}; do DIS="$DIS, '$u'"; done; gsettings set org.gnome.shell disabled-extensions "[${DIS#, }]"
 # MIST_DOCK_JSON='{"autohide": false}': Isobar's dock override file, for example to keep the dock visible in screenshots
 [ -z "${MIST_DOCK_JSON:-}" ] || { mkdir -p "$XDG_CONFIG_HOME/isobar"; printf %s "$MIST_DOCK_JSON" > "$XDG_CONFIG_HOME/isobar/dock.json"; }
-gsettings set org.gnome.shell enabled-extensions "['mist@gijs.dev', 'mist-driver@gijs.dev']"
+gsettings set org.gnome.shell enabled-extensions "['$MIST_EXT_UUID', 'mist-driver@gijs.dev']"
 gnome-shell --mode=ubuntu --headless --virtual-monitor ${MIST_SIZE:-1280x800} &
 SHELL_PID=$!
 trap 'kill $SHELL_PID 2>/dev/null' EXIT

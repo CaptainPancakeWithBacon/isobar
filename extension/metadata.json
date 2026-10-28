@@ -5,6 +5,7 @@
   "shell-version": [
     "50"
   ],
-  "version": 1,
+  "settings-schema": "org.gnome.shell.extensions.isobar",
+  "url": "https://github.com/CaptainPancakeWithBacon/isobar",
   "version-name": "0.1.0"
 }

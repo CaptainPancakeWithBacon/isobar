@@ -1,4 +1,4 @@
-// Mist's shape language for GTK4 and libadwaita apps: large soft radii, flat quiet headers, pill controls, thin lines.
+// Isobar's shape language for GTK4 and libadwaita apps: large soft radii, flat quiet headers, pill controls, thin lines.
 // It only uses the named colours (so it is the same in light and dark) and plain selectors, which keeps it small.
 export const SHAPE = `
 /* ---- shape ---- */

@@ -105,7 +105,7 @@ export function paletteFrom(pixels, top = pixels, clock = top, mode = null) {
     };
 
     return {
-        ...surface, ...gtk, accent, dark, hue: Math.round(hue), name: 'Mist', average: hexOf(avg),
+        ...surface, ...gtk, accent, dark, hue: Math.round(hue), name: 'Isobar', average: hexOf(avg),
         // the same shape the shell template wants for the rest
         ground: band, minor: surface.hover, major: surface.muted, dot: barText.muted,
         bar: {...barText, veil, veilColor: useDark ? tint(0.7, 0.965) : tint(0.9, 0.14)},

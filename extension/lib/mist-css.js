@@ -52,6 +52,15 @@ StLabel.hint-text,
     color: ${p.paper};
 }
 
+/* the dock's app-grid button is drawn in white by the dock itself, which vanishes on a light pill */
+#dashtodockContainer .show-apps StIcon,
+#dashtodockContainer .show-apps .overview-icon,
+#dashtodockContainer #dash .show-apps StIcon,
+#dash .show-apps StIcon {
+    color: ${p.paper} !important;
+    -st-icon-style: symbolic;
+}
+
 .mist-clock {
     font-size: 22px;
     font-weight: 300;

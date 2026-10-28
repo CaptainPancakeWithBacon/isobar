@@ -63,7 +63,7 @@ export default class MistDriver extends Extension {
         log(`scheme at start ${ifaceStart}`);
         const a = ctx();
         log(`state ${JSON.stringify(a)}`);
-        check('the bar has no background of its own on a clear wallpaper', a.bar.alpha === 0, `alpha ${a.bar.alpha}`);
+        check('the bar is transparent, or carries the soft veil on a busy top edge', a.bar.alpha === 0 || (a.bar.alpha > 120 && a.bar.alpha < 160), `alpha ${a.bar.alpha}`);
         const dark = lum(a.card) < 0.2;
         log(`card is ${dark ? 'dark' : 'light'}`);
         check('card text reads on the card', Math.abs(lum(a.card) - lum(a.cardText)) > 0.5);

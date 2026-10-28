@@ -10,7 +10,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {paletteFrom} from './lib/palette.js';
 import {sample} from './lib/wallpaper.js';
 import {mistCss} from './lib/mist-css.js';
-import {gtkCss} from './lib/gtk-css.js';
+import {gtkCss, GTK3} from './lib/gtk-css.js';
 import {applyGtk, removeGtk} from './lib/gtk.js';
 // @full:start
 import {CoucouSync} from './lib/coucou.js';
@@ -118,7 +118,7 @@ export default class Isobar extends Extension {
         this._shareAccent(on('terminal-accent'));
         // libadwaita apps get both palettes, whatever mode the wallpaper is in: GTK picks the one that applies, live
         if (on('style-apps'))
-            applyGtk(gtkCss(paletteFrom(pixels, top, clock, 'light'), paletteFrom(pixels, top, clock, 'dark')));
+            applyGtk(gtkCss(paletteFrom(pixels, top, clock, 'light'), paletteFrom(pixels, top, clock, 'dark')), GTK3);
         else
             removeGtk();
         // the colour the shell paints while it starts, before the wallpaper is ready: the wallpaper's own average, not stock grey

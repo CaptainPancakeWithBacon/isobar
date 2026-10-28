@@ -1,4 +1,4 @@
-# Mist
+# Isobar
 
 **The adaptive GNOME interface.** A GNOME 50 extension that takes its colours from your wallpaper, at all times.
 
@@ -12,11 +12,13 @@
 
 ## Apps (GTK4 and libadwaita)
 
-Mist also restyles GNOME's own apps (Files, Settings, Text Editor, Calculator and anything built on libadwaita). A GTK *theme* does nothing for those apps,
-so Mist does it the way they allow: `~/.config/gtk-4.0/mist.css`, imported by one line in your `gtk.css`.
+Isobar also restyles GNOME's own apps (Files, Settings, Text Editor, Calculator and anything built on libadwaita). A GTK *theme* does nothing for those apps,
+so Isobar does it the way they allow: `~/.config/gtk-4.0/mist.css`, imported by one line in your `gtk.css`.
 It holds the wallpaper's colours twice, inside `prefers-color-scheme` blocks, so open apps follow light/dark live, plus Mist's shape language:
 big soft radii, headers that sit on the window, round controls and thin sliders (`extension/lib/gtk-shape.js`).
-Disabling Mist removes the file and the import line. GTK3 apps are not covered yet. New hues reach apps when they next open.
+
+> The code and ids still say `mist` (extension `mist@gijs.dev`, `mist.css`): that was the working name, kept so nothing has to be re-enabled or renamed.
+Disabling Isobar removes the file and the import line. GTK3 apps are not covered yet. New hues reach apps when they next open.
 
 ## Try it without touching your session
 

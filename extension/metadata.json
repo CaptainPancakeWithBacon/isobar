@@ -1,6 +1,8 @@
 {
   "uuid": "mist@gijs.dev",
-  "name": "Mist",
+  "name": "Isobar",
   "description": "The adaptive GNOME interface: it takes its colours from your wallpaper. A slim strip, a big clock, cards that go light or dark with the picture.",
-  "shell-version": ["50"]
+  "shell-version": [
+    "50"
+  ]
 }

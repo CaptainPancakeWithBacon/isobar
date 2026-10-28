@@ -1,6 +1,6 @@
 {
   "uuid": "mist@gijs.dev",
   "name": "Mist",
-  "description": "A quiet shell that takes its colours from your wallpaper: a slim strip, a big clock, light cards.",
+  "description": "The adaptive GNOME interface: it takes its colours from your wallpaper. A slim strip, a big clock, cards that go light or dark with the picture.",
   "shell-version": ["50"]
 }

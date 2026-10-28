@@ -1,6 +1,6 @@
-# Mist for GNOME
+# Mist
 
-A GNOME 50 extension that takes its colours from your wallpaper, at all times.
+**The adaptive GNOME interface.** A GNOME 50 extension that takes its colours from your wallpaper, at all times.
 
 - **Strip:** the top bar has no background. Time, workspace dots and the app in front on the left, the stock quick settings on the right.
 - **Big clock** on the desktop, under the windows.

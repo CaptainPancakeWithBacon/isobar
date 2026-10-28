@@ -58,16 +58,32 @@ export const DARK_BELOW = 0.2;   // WCAG luminance of the wallpaper's average; m
  * Returns the palette: surface roles (ink, paper, track, hover, muted) for cards and menus,
  * and the colours for the bar itself, which sits straight on the wallpaper.
  */
-export function paletteFrom(pixels, top = pixels, clock = top) {
+export function paletteFrom(pixels, top = pixels, clock = top, mode = null) {
     const avg = mean(pixels);
     const hue = dominantHue(pixels) ?? toHsl(avg)[0];
     const chroma = clamp(toHsl(avg)[1], 0.06, 0.26);
-    const dark = luminance(hexOf(avg)) < DARK_BELOW;
+    // mode forces light or dark (for the GTK files, which need both); otherwise the wallpaper decides
+    const dark = mode ? mode === 'dark' : luminance(hexOf(avg)) < DARK_BELOW;
     const tint = (s, l) => fromHsl(hue, clamp(chroma * s, 0.04, 0.5), l);
 
     const surface = dark
         ? {ink: tint(0.9, 0.14), track: tint(0.9, 0.19), hover: tint(0.9, 0.25), paper: tint(0.5, 0.94), muted: tint(0.5, 0.70)}
         : {ink: tint(0.7, 0.965), track: tint(0.8, 0.925), hover: tint(0.8, 0.87), paper: tint(0.9, 0.09), muted: tint(0.6, 0.36)};
+
+    // GTK apps want a few more surfaces, and an accent that white text reads on
+    const gtk = dark
+        ? {view: tint(0.9, 0.11), header: tint(0.9, 0.18), sidebar: tint(0.9, 0.16), card: tint(0.9, 0.19)}
+        : {view: tint(0.4, 0.995), header: tint(0.8, 0.935), sidebar: tint(0.8, 0.945), card: tint(0.4, 0.99)};
+    const accentSat = clamp(chroma * 2.4, 0.45, 0.7);
+    let accentL = dark ? 0.52 : 0.44;
+    const accentAt = l => fromHsl(hue, accentSat, l);
+    while (accentL > 0.2 && contrast('#FFFFFF', accentAt(accentL)) < 4.5)
+        accentL -= 0.01;
+    // the accent as text or a link on the window: lighter on dark, darker on light, whichever it takes to read
+    let textL = dark ? 0.72 : 0.38;
+    while (textL > 0.15 && textL < 0.9 && contrast(accentAt(textL), surface.ink) < 4.5)
+        textL += dark ? 0.01 : -0.01;
+    const accent = {bg: accentAt(accentL), text: accentAt(textL)};
 
     // the bar has no background of its own: dark text on a light band, light text on a dark one,
     // whichever reads better, and a soft veil when neither reads well enough
@@ -89,7 +105,7 @@ export function paletteFrom(pixels, top = pixels, clock = top) {
     };
 
     return {
-        ...surface, dark, hue: Math.round(hue), name: 'Mist', average: hexOf(avg),
+        ...surface, ...gtk, accent, dark, hue: Math.round(hue), name: 'Mist', average: hexOf(avg),
         // the same shape the shell template wants for the rest
         ground: band, minor: surface.hover, major: surface.muted, dot: barText.muted,
         bar: {...barText, veil, veilColor: useDark ? tint(0.7, 0.965) : tint(0.9, 0.14)},

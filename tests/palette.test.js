@@ -72,4 +72,26 @@ test('the average is the wallpaper\'s mean colour', () => {
     eq(paletteFrom(flat(220, 226, 230)).average, '#DCE2E6');
 });
 
+test('the accent carries white text, and reads as text on the window, in light and dark, for any hue', () => {
+    for (const c of [[220, 226, 230], [20, 28, 40], [200, 60, 60], [60, 160, 90], [240, 200, 120], [60, 90, 200], [120, 120, 120]]) {
+        const p = paletteFrom(flat(...c));
+        eq([c, contrast('#FFFFFF', p.accent.bg) >= 4.5], [c, true]);
+        eq([c, contrast(p.accent.text, p.ink) >= 4.5], [c, true]);
+    }
+});
+
+test('the GTK surfaces keep their order: the view stands out from the window, headers from the view', () => {
+    const l = paletteFrom(flat(220, 226, 230)), d = paletteFrom(flat(20, 28, 40));
+    eq(luminance(l.view) > luminance(l.ink) && luminance(l.ink) > luminance(l.header), true);
+    eq(luminance(d.view) < luminance(d.ink) && luminance(d.ink) < luminance(d.header), true);
+});
+
+test('a mode can be forced, and the hue stays the wallpaper\'s', () => {
+    const px = flat(60, 140, 200);
+    const l = paletteFrom(px, px, px, 'light'), d = paletteFrom(px, px, px, 'dark');
+    eq([l.dark, d.dark], [false, true]);
+    eq(l.hue, d.hue);
+    eq(luminance(l.ink) > 0.8 && luminance(d.ink) < 0.05, true);
+});
+
 done();

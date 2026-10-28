@@ -11,6 +11,8 @@ import {paletteFrom} from './lib/palette.js';
 import {sample} from './lib/wallpaper.js';
 import {mistCss} from './lib/mist-css.js';
 import {CoucouSync} from './lib/coucou.js';
+import {gtkCss} from './lib/gtk-css.js';
+import {applyGtk, removeGtk} from './lib/gtk.js';
 
 const DOT = 6;
 const LONG = 20;
@@ -77,6 +79,7 @@ export default class Mist extends Extension {
         if (this._clock)
             GLib.source_remove(this._clock);
         this._unload();
+        removeGtk();
         this._coucou?.destroy();
         this._left?.destroy();
         this._big?.destroy();
@@ -93,6 +96,8 @@ export default class Mist extends Extension {
                 this._iface.set_string('color-scheme', scheme);   // its change handler restyles once more, without following
         }
         this._syncIcons();
+        // libadwaita apps get both variants, whatever mode the wallpaper is in: GTK chooses between them by itself, live
+        applyGtk(gtkCss(paletteFrom(pixels, top, clock, 'light'), paletteFrom(pixels, top, clock, 'dark')));
         this._coucou.sync(this._palette.ink);   // Coucou's island wears the card colour
         // the colour the shell paints while it starts up, before the wallpaper is ready: the wallpaper's own average, not stock grey
         if (this._login)

@@ -83,6 +83,16 @@ export default class MistDriver extends Extension {
         Main.overview.hide();
         await sleep(800);
 
+        // libadwaita apps: Mist's colours are in place, and a real app picks them up
+        const cfg = GLib.get_user_config_dir();
+        const read = f => { try { return new TextDecoder().decode(GLib.file_get_contents(f)[1]); } catch (e) { return ''; } };
+        const mist1 = read(`${cfg}/gtk-4.0/mist.css`);
+        check('the GTK stylesheet is written, with a light and a dark window colour', (mist1.match(/@define-color window_bg_color #[0-9A-F]{6};/g) ?? []).length === 2);
+        check('gtk.css imports it', read(`${cfg}/gtk-4.0/gtk.css`).includes('mist.css'));
+        GLib.spawn_command_line_async('nautilus --new-window');
+        await sleep(6000);
+        await screenshot('app');
+
         // the wallpaper changes: the palette must follow
         const other = GLib.getenv('MIST_WALLPAPER_2');
         if (other) {
@@ -98,6 +108,13 @@ export default class MistDriver extends Extension {
             check('GNOME light/dark follows the wallpaper', iface.get_string('color-scheme') === (lum(b.card) < 0.2 ? 'prefer-dark' : 'default'), iface.get_string('color-scheme'));
             check('Papirus follows light/dark too', iface.get_string('icon-theme') === (lum(b.card) < 0.2 ? 'Papirus-Dark' : 'Papirus-Light'), iface.get_string('icon-theme'));
             check('the cursor follows light/dark too', iface.get_string('cursor-theme') === (lum(b.card) < 0.2 ? 'DMZ-White' : 'DMZ-Black'), iface.get_string('cursor-theme'));
+            const mist2 = read(`${cfg}/gtk-4.0/mist.css`);
+            check('the GTK colours changed with the wallpaper hue', mist2 !== mist1 && mist2.includes('@define-color window_bg_color'));
+            await sleep(1500);
+            await screenshot('app-open-after');   // the same window, still open: does it follow live?
+            GLib.spawn_command_line_async('gnome-text-editor --new-window');
+            await sleep(6000);
+            await screenshot('app2');
             await screenshot('desktop2');
             quick.menu.open();
             await sleep(1200);

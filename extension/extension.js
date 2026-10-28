@@ -96,6 +96,10 @@ export default class Mist extends Extension {
                 this._iface.set_string('color-scheme', scheme);   // its change handler restyles once more, without following
         }
         this._syncIcons();
+        // the accent, for things outside the shell that want to wear it (the terminal logo in brand/terminal reads this)
+        const home = GLib.build_filenamev([GLib.get_user_cache_dir(), 'isobar']);
+        GLib.mkdir_with_parents(home, 0o755);
+        GLib.file_set_contents(`${home}/accent`, `${this._palette.accent.text}\n`);
         // libadwaita apps get both variants, whatever mode the wallpaper is in: GTK chooses between them by itself, live
         applyGtk(gtkCss(paletteFrom(pixels, top, clock, 'light'), paletteFrom(pixels, top, clock, 'dark')));
         this._coucou.sync(this._palette.ink);   // Coucou's island wears the card colour

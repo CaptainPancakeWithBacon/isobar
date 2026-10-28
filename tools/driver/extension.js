@@ -88,6 +88,7 @@ export default class MistDriver extends Extension {
         const read = f => { try { return new TextDecoder().decode(GLib.file_get_contents(f)[1]); } catch (e) { return ''; } };
         const mist1 = read(`${cfg}/gtk-4.0/mist.css`);
         check('the GTK stylesheet is written, with a light and a dark window colour', (mist1.match(/@define-color window_bg_color #[0-9A-F]{6};/g) ?? []).length === 2);
+        check('the accent colour is written for the terminal logo', /^#[0-9A-F]{6}\n$/.test(read(`${GLib.get_user_cache_dir()}/isobar/accent`)), read(`${GLib.get_user_cache_dir()}/isobar/accent`).trim());
         check('gtk.css imports it', read(`${cfg}/gtk-4.0/gtk.css`).includes('mist.css'));
         GLib.spawn_command_line_async('nautilus --new-window');
         await sleep(6000);

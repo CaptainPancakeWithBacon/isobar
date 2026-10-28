@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# fastfetch with the Isobar logo, in the colour of your wallpaper.
+# The Isobar extension writes the current accent to ~/.cache/isobar/accent; without it the logo uses your terminal's default colour.
+# Usage: isobar-fetch [--big] [fastfetch options]. Your own fastfetch config is used for everything except the logo.
+dir=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
+logo="$dir/isobar-small.txt"
+[ "${1:-}" = "--big" ] && { logo="$dir/isobar.txt"; shift; }
+[ -f "$logo" ] || logo="$HOME/.local/share/isobar/$(basename "$logo")"
+args=()
+accent=$(cat "${XDG_CACHE_HOME:-$HOME/.cache}/isobar/accent" 2>/dev/null)
+if [[ $accent =~ ^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})$ ]]; then
+    args+=(--logo-color-1 "38;2;$((16#${BASH_REMATCH[1]}));$((16#${BASH_REMATCH[2]}));$((16#${BASH_REMATCH[3]}))")
+fi
+exec fastfetch --logo "$logo" --logo-type file --logo-padding-right 2 "${args[@]}" "$@"

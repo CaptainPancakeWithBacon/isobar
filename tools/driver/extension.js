@@ -97,6 +97,7 @@ export default class MistDriver extends Extension {
             const iface = new Gio.Settings({schema_id: 'org.gnome.desktop.interface'});
             check('GNOME light/dark follows the wallpaper', iface.get_string('color-scheme') === (lum(b.card) < 0.2 ? 'prefer-dark' : 'default'), iface.get_string('color-scheme'));
             check('Papirus follows light/dark too', iface.get_string('icon-theme') === (lum(b.card) < 0.2 ? 'Papirus-Dark' : 'Papirus-Light'), iface.get_string('icon-theme'));
+            check('the cursor follows light/dark too', iface.get_string('cursor-theme') === (lum(b.card) < 0.2 ? 'DMZ-White' : 'DMZ-Black'), iface.get_string('cursor-theme'));
             await screenshot('desktop2');
             quick.menu.open();
             await sleep(1200);

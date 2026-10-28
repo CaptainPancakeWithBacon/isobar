@@ -108,14 +108,18 @@ export default class Mist extends Extension {
         this._sheet = file;
     }
 
-    // Papirus comes in a light and a dark variant: whichever one is in use follows light/dark. Any other icon theme is left alone.
+    // Papirus and DMZ come in a light and a dark variant: whichever one is in use follows light/dark. Any other theme is left alone.
     _syncIcons() {
-        const current = this._iface.get_string('icon-theme');
-        if (!current.startsWith('Papirus'))
-            return;
-        const want = this._iface.get_string('color-scheme') === 'prefer-dark' ? 'Papirus-Dark' : 'Papirus-Light';
-        if (current !== want)
-            this._iface.set_string('icon-theme', want);
+        const dark = this._iface.get_string('color-scheme') === 'prefer-dark';
+        const swap = (key, prefix, light, darkName) => {
+            const current = this._iface.get_string(key);
+            const want = dark ? darkName : light;
+            if (current.startsWith(prefix) && current !== want)
+                this._iface.set_string(key, want);
+        };
+        swap('icon-theme', 'Papirus', 'Papirus-Light', 'Papirus-Dark');
+        // the pointer too: a white one on dark, a black one on light
+        swap('cursor-theme', 'DMZ', 'DMZ-Black', 'DMZ-White');
     }
 
     _unload() {

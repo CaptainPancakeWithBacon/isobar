@@ -16,6 +16,7 @@ else
     gsettings set org.gnome.desktop.background primary-color "#DDE2E6"
 fi
 gsettings set org.gnome.desktop.interface icon-theme "${MIST_ICON_THEME:-Papirus-Light}"
+gsettings set org.gnome.desktop.interface cursor-theme "${MIST_CURSOR_THEME:-DMZ-Black}"
 gsettings set org.gnome.shell enabled-extensions "['mist@gijs.dev', 'mist-driver@gijs.dev']"
 gnome-shell --mode=ubuntu --headless --virtual-monitor 1280x800 &
 SHELL_PID=$!

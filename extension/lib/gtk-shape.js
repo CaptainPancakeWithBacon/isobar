@@ -71,9 +71,42 @@ button.suggested-action:hover {
     background-color: mix(@accent_bg_color, @window_fg_color, 0.12);
 }
 
-button.circular,
-windowcontrols button {
+button.circular {
     border-radius: 999px;
+}
+
+/* window buttons: small quiet circles; the glyph shows when you point at one, and the colours come from the palette.
+   libadwaita stretches these buttons to the height of the header, so the button stays an invisible hit area and the
+   14px circle is drawn inside it. */
+windowcontrols button {
+    min-width: 22px;
+    padding: 0;
+    margin-left: 2px;
+    margin-right: 2px;
+    background-color: transparent;
+    background-image: radial-gradient(circle at center, alpha(@window_fg_color, 0.16) 6.5px, transparent 7.5px);
+}
+
+windowcontrols button image {
+    -gtk-icon-size: 8px;
+    opacity: 0;
+}
+
+windowcontrols button:hover {
+    background-image: radial-gradient(circle at center, @window_fg_color 6.5px, transparent 7.5px);
+    color: @window_bg_color;
+}
+
+windowcontrols button:hover image {
+    opacity: 1;
+}
+
+windowcontrols button:active {
+    background-image: radial-gradient(circle at center, alpha(@window_fg_color, 0.7) 6.5px, transparent 7.5px);
+}
+
+windowcontrols:backdrop button {
+    background-image: radial-gradient(circle at center, alpha(@window_fg_color, 0.08) 6.5px, transparent 7.5px);
 }
 
 /* entries and search */

@@ -46,7 +46,7 @@ Template functions: a palette goes in, CSS text comes out. `shell-css.js` import
 
 ## `extension/lib/gtk-css.js` ★, `gtk-shape.js` ★, `gtk.js` ★
 
-GNOME's own apps (libadwaita) ignore GTK themes but read `~/.config/gtk-4.0/gtk.css`. `gtk-css.js` writes the palette as libadwaita's named colours and CSS variables, once inside `@media (prefers-color-scheme: light)` and once inside `dark`, so GTK picks the right one by itself, even live. `gtk-shape.js` is the shape language (radii, flat headers, round buttons) as one CSS string using only those named colours. `gtk.js` writes `mist.css` next to your `gtk.css`, adds one `@import` line to `gtk.css` (creating it if needed), and removes exactly that line and the file again.
+GNOME's own apps (libadwaita) ignore GTK themes but read `~/.config/gtk-4.0/gtk.css`. `gtk-css.js` writes the palette as libadwaita's named colours and CSS variables, once inside `@media (prefers-color-scheme: light)` and once inside `dark`, so GTK picks the right one by itself, even live. `gtk-shape.js` is the shape language (radii, flat headers, round buttons, and small quiet window-control circles: libadwaita stretches those buttons to the header's height, so the button stays an invisible hit area and the 14px circle is a radial gradient drawn inside it) as one CSS string using only those named colours. `gtk.js` writes `mist.css` next to your `gtk.css`, adds one `@import` line to `gtk.css` (creating it if needed), and removes exactly that line and the file again.
 
 ## `extension/prefs.js` ★ and `schemas/` ★
 

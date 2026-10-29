@@ -37,16 +37,16 @@ stage {
 #panel:overview .panel-button:focus,
 #panel:overview .panel-button:active,
 #panel:overview .panel-button:checked {
-    background-color: ${p.track};
-    color: ${p.paper};
+    background-color: ${p.accent.bg};
+    color: #FFFFFF;
 }
 
 #panel .panel-button.clock-display:hover .clock,
 #panel .panel-button.clock-display:focus .clock,
 #panel .panel-button.clock-display:active .clock,
 #panel .panel-button.clock-display:checked .clock {
-    box-shadow: inset 0 0 0 100px ${p.track};
-    color: ${p.paper};
+    box-shadow: inset 0 0 0 100px ${p.accent.bg};
+    color: #FFFFFF;
 }
 
 #panel .system-status-icon,

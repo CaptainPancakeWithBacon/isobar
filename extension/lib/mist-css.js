@@ -28,18 +28,34 @@ export function mistCss(p) {
     box-shadow: none !important;
 }
 
+/* pointing at anything in the bar fills it with the accent, and its icons and text turn white (white reads on every accent) */
 #panel .panel-button:hover,
 #panel .panel-button:focus,
 #panel .panel-button:active,
 #panel .panel-button:checked {
-    background-color: ${alpha(text, 0.1)} !important;
-    color: ${text} !important;
+    background-color: ${p.accent.bg} !important;
+    color: #FFFFFF !important;
 }
 
 #panel .system-status-icon,
 #panel .panel-button StIcon,
 #panel:overview .panel-button StIcon {
     color: ${text} !important;
+}
+
+#panel .panel-button:hover .system-status-icon,
+#panel .panel-button:focus .system-status-icon,
+#panel .panel-button:active .system-status-icon,
+#panel .panel-button:checked .system-status-icon,
+#panel .panel-button:hover StIcon,
+#panel .panel-button:focus StIcon,
+#panel .panel-button:active StIcon,
+#panel .panel-button:checked StIcon,
+#panel .panel-button:hover StLabel,
+#panel .panel-button:focus StLabel,
+#panel .panel-button:active StLabel,
+#panel .panel-button:checked StLabel {
+    color: #FFFFFF !important;
 }
 
 /* the search hint is stock-coloured and vanishes on a light card */

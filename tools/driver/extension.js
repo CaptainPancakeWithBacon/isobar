@@ -81,6 +81,13 @@ export default class MistDriver extends Extension {
         const startup = login.get_string('background-color');
         check(EGO ? 'the start-up colour is left alone until the user switches it on' : 'the start-up colour is set to the wallpaper average, not left to the stock grey', EGO ? startup === '' : /^#[0-9A-F]{6}$/.test(startup), startup);
         await screenshot('desktop');
+        // the top bar's hover state, forced: pointing at a bar button fills it with the accent and turns its icons white
+        quick.add_style_pseudo_class('hover');
+        await sleep(500);
+        await screenshot('bar-hover');
+        const hov = quick.get_theme_node().get_background_color();
+        check('hovering a top-bar button fills it with the accent', hov.alpha > 200, `rgba(${hov.red},${hov.green},${hov.blue},${hov.alpha})`);
+        quick.remove_style_pseudo_class('hover');
         quick.menu.open();
         await sleep(1200);
         await screenshot('quick');

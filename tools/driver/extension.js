@@ -107,7 +107,6 @@ export default class MistDriver extends Extension {
         const accent = read(`${GLib.get_user_cache_dir()}/isobar/accent`);
         check(EGO ? 'the accent colour is not shared until the user switches it on' : 'the accent colour is written for the terminal logo', EGO ? accent === '' : /^#[0-9A-F]{6}\n$/.test(accent), accent.trim());
         check('gtk.css imports it', read(`${cfg}/gtk-4.0/gtk.css`).includes('mist.css'));
-        check('GTK3 apps get the window buttons too', read(`${cfg}/gtk-3.0/mist.css`).includes('button.titlebutton') && read(`${cfg}/gtk-3.0/gtk.css`).includes('mist.css'));
         GLib.spawn_command_line_async(GLib.getenv('MIST_APP_CMD') ?? 'nautilus --new-window');
         await sleep(6000);
         await screenshot('app');
@@ -157,10 +156,10 @@ export default class MistDriver extends Extension {
         const cfgDir = GLib.get_user_config_dir();
         prefs.set_boolean('style-apps', false);
         await sleep(1500);
-        check('turning off "Style GNOME apps" removes the colour files and the imports (GTK4 and GTK3)', !GLib.file_test(`${cfgDir}/gtk-4.0/mist.css`, GLib.FileTest.EXISTS) && !read(`${cfgDir}/gtk-4.0/gtk.css`).includes('mist.css') && !GLib.file_test(`${cfgDir}/gtk-3.0/mist.css`, GLib.FileTest.EXISTS) && !read(`${cfgDir}/gtk-3.0/gtk.css`).includes('mist.css'));
+        check('turning off "Style GNOME apps" removes the colour file and the import', !GLib.file_test(`${cfgDir}/gtk-4.0/mist.css`, GLib.FileTest.EXISTS) && !read(`${cfgDir}/gtk-4.0/gtk.css`).includes('mist.css'));
         prefs.set_boolean('style-apps', true);
         await sleep(1500);
-        check('turning it on writes them again', read(`${cfgDir}/gtk-4.0/mist.css`).includes('@define-color window_bg_color') && read(`${cfgDir}/gtk-3.0/mist.css`).includes('titlebutton'));
+        check('turning it on writes them again', read(`${cfgDir}/gtk-4.0/mist.css`).includes('@define-color window_bg_color'));
         prefs.set_boolean('terminal-accent', !prefs.get_boolean('terminal-accent'));
         await sleep(1000);
         check('the accent switch writes or removes the shared colour file', GLib.file_test(`${GLib.get_user_cache_dir()}/isobar/accent`, GLib.FileTest.EXISTS) === prefs.get_boolean('terminal-accent'));

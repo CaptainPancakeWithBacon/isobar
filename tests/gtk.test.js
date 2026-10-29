@@ -1,6 +1,6 @@
 import {test, eq, done} from './harness.js';
 import {paletteFrom} from '../extension/lib/palette.js';
-import {gtkCss, GTK3} from '../extension/lib/gtk-css.js';
+import {gtkCss} from '../extension/lib/gtk-css.js';
 
 const flat = (r, g, b) => Array.from({length: 20}, () => [r, g, b]);
 const NAMES = ['accent_color', 'accent_bg_color', 'accent_fg_color', 'window_bg_color', 'window_fg_color', 'view_bg_color', 'view_fg_color',
@@ -36,12 +36,6 @@ test('libadwaita\'s CSS variables are set too, in both blocks', () => {
     const css = gtkCss(paletteFrom(px, px, px, 'light'), paletteFrom(px, px, px, 'dark'));
     for (const name of ['--window-bg-color', '--sidebar-bg-color', '--headerbar-bg-color', '--accent-bg-color'])
         eq([name, css.split(`${name}:`).length - 1], [name, 2]);
-});
-
-test('GTK3 apps get window buttons only, in the colours of their own theme', () => {
-    eq(GTK3.includes('button.titlebutton'), true);
-    eq(GTK3.includes('@theme_fg_color'), true);
-    eq(/undefined|NaN|@define-color/.test(GTK3), false);
 });
 
 done();

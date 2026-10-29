@@ -80,39 +80,3 @@ ${colours(light)}}
 ${colours(dark)}}
 ${SHAPE}`;
 }
-
-/** GTK3 apps ignore the libadwaita colours; they only get the window buttons, in the colours of whichever theme they are in. */
-export const GTK3 = `/* Isobar: window buttons for GTK3 apps. Do not edit: it is rewritten by the extension. */
-headerbar button.titlebutton,
-.titlebar button.titlebutton {
-    min-width: 14px;
-    min-height: 14px;
-    padding: 0;
-    margin: 0 4px;
-    border: none;
-    border-radius: 999px;
-    box-shadow: none;
-    background-image: none;
-    background-color: alpha(@theme_fg_color, 0.16);
-}
-
-headerbar button.titlebutton:hover,
-.titlebar button.titlebutton:hover {
-    background-color: @theme_fg_color;
-}
-
-headerbar button.titlebutton:active,
-.titlebar button.titlebutton:active {
-    background-color: alpha(@theme_fg_color, 0.7);
-}
-
-headerbar button.titlebutton:backdrop,
-.titlebar button.titlebutton:backdrop {
-    background-color: alpha(@theme_fg_color, 0.08);
-}
-
-headerbar button.titlebutton image,
-.titlebar button.titlebutton image {
-    opacity: 0;
-}
-`;

@@ -23,8 +23,11 @@ for pair in ${MIST_DCONF:-}; do dconf write "${pair%%=*}" "${pair#*=}"; done
 DIS=""; for u in ${MIST_DISABLE_EXT:-}; do DIS="$DIS, '$u'"; done; gsettings set org.gnome.shell disabled-extensions "[${DIS#, }]"
 # MIST_DOCK_JSON='{"autohide": false}': Isobar's dock override file, for example to keep the dock visible in screenshots
 [ -z "${MIST_DOCK_JSON:-}" ] || { mkdir -p "$XDG_CONFIG_HOME/isobar"; printf %s "$MIST_DOCK_JSON" > "$XDG_CONFIG_HOME/isobar/dock.json"; }
-gsettings set org.gnome.shell enabled-extensions "['$MIST_EXT_UUID', 'mist-driver@gijs.dev']"
-gnome-shell --mode=ubuntu --headless --virtual-monitor ${MIST_SIZE:-1280x800} &
+EXTRA=""; for u in ${MIST_EXTRA_EXT:-}; do EXTRA="$EXTRA, '$u'"; done
+gsettings set org.gnome.shell enabled-extensions "['$MIST_EXT_UUID', 'mist-driver@gijs.dev'$EXTRA]"
+# MIST_SIZE="1280x800 1280x800": one virtual monitor per size
+MONITORS=""; for m in ${MIST_SIZE:-1280x800}; do MONITORS="$MONITORS --virtual-monitor $m"; done
+gnome-shell --mode=ubuntu --headless $MONITORS &
 SHELL_PID=$!
 trap 'kill $SHELL_PID 2>/dev/null' EXIT
 for _ in $(seq 120); do [ -e "$MIST_OUT/done" ] && break; sleep 1; done

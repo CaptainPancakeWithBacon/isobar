@@ -29,6 +29,7 @@ test('the id follows the rule: id@namespace with allowed characters, not gnome.o
     const meta = JSON.parse(inZip('metadata.json'));
     eq([/^[A-Za-z0-9._-]+@[A-Za-z0-9._-]+$/.test(meta.uuid), meta.uuid.endsWith('gnome.org')], [true, false]);
     eq([meta['shell-version'], 'version' in meta, meta.url.startsWith('https://github.com/')], [['50'], false, true]);
+    eq('session-modes' in meta, false);
 });
 
 test('the settings schema uses the required base, and the system-wide switches default to off', () => {

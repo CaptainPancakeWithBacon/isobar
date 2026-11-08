@@ -33,7 +33,7 @@ Source: [GNOME Shell extension review guidelines](https://gjs.guide/extensions/r
 | Other extensions | The shell stylesheet contains CSS selectors that style Ubuntu Dock's look, like any theme. No code touches another extension or its settings. |
 | Settings schema base `org.gnome.shell.extensions` | Done: `org.gnome.shell.extensions.isobar`, path `/org/gnome/shell/extensions/isobar/`, file `<id>.gschema.xml` in the zip. |
 | `metadata.json`: id, name, description, `shell-version`, `url`; no `version` | Done. `shell-version` lists only `50`. |
-| `session-modes` only if needed | Not used. |
+| `session-modes` only if needed | Not used in the listing edition. The GitHub edition lists `unlock-dialog` so that extra bars (Multi Monitor Bar) do not turn solid black on the lock screen. |
 | Licence compatible with GPL-2.0-or-later | MIT, which the guidelines accept. |
 | Package only what is needed | The zip has 13 files and 15 KB: `extension.js`, `prefs.js`, `metadata.json`, `lib/`, the schema. |
 | No copyrighted or trademarked content | The logo is original. Papirus and DMZ are only named in text, never shipped. |

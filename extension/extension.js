@@ -37,7 +37,7 @@ export default class Isobar extends Extension {
         // @full:end
 
         const panel = Main.panel;
-        this._hidden = [panel.statusArea.activities, panel.statusArea.dateMenu];
+        this._hidden = [panel.statusArea.activities, panel.statusArea.dateMenu].filter(Boolean);   // the lock screen's panel has neither
         this._hidden.forEach(item => item.container.hide());
 
         // left of the bar: the time, the workspace dots, the app in front
@@ -64,6 +64,10 @@ export default class Isobar extends Extension {
         this._connect(global.display, 'notify::focus-window', () => this._syncApp());
         this._buildDots();
         this._syncApp();
+        // Isobar stays on while the screen is locked (session-modes), so extra bars such as Multi Monitor Bar's keep our transparent style
+        // instead of Ubuntu's solid black. Rebuilding the panel on lock and unlock shows Activities and the date again: hide them again.
+        this._connect(Main.sessionMode, 'updated', () => this._syncMode());
+        this._syncMode();
 
         this._tick();
         this._clock = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 20, () => {
@@ -198,6 +202,12 @@ export default class Isobar extends Extension {
                 y_expand: true,
             }));
         }
+    }
+
+    // On the lock screen the bar shows no clock, dots or app name: what you had open is nobody's business.
+    _syncMode() {
+        this._hidden.forEach(item => item.container.hide());
+        this._left.visible = Main.sessionMode.currentMode !== 'unlock-dialog';
     }
 
     _syncApp() {

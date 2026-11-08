@@ -12,7 +12,9 @@ TMP=$(mktemp -d)
 trap 'fusermount3 -u -z "$TMP/run/doc" 2>/dev/null || true; rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/data/gnome-shell/extensions" "$TMP/config"
 ln -s "$EXT_DIR" "$TMP/data/gnome-shell/extensions/$MIST_EXT_UUID"
-ln -s "$ROOT/tools/driver" "$TMP/data/gnome-shell/extensions/mist-driver@gijs.dev"
+ln -s "${MIST_DRIVER_DIR:-$ROOT/tools/driver}" "$TMP/data/gnome-shell/extensions/mist-driver@gijs.dev"
+# MIST_EXTRA_EXT="uuid ...": also load these of your installed extensions in the throwaway shell (read-only symlinks), for example the lock screen one
+for u in ${MIST_EXTRA_EXT:-}; do ln -s "$HOME/.local/share/gnome-shell/extensions/$u" "$TMP/data/gnome-shell/extensions/$u"; done
 # Its own runtime dir too: portals started on the throwaway bus (the document portal's FUSE mount at $XDG_RUNTIME_DIR/doc)
 # would otherwise reach the real session's, and unmount it. Flatpak apps such as Zen then fail to start.
 mkdir -m 700 "$TMP/run"

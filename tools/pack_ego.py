@@ -46,6 +46,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
     meta = json.loads((build / 'metadata.json').read_text())
     meta.update(uuid=UUID, description=DESCRIPTION)
+    meta.pop('session-modes', None)   # the guidelines want it only when needed; the GitHub edition keeps it for extra bars on the lock screen
     (build / 'metadata.json').write_text(json.dumps(meta, indent=2) + '\n')
 
     # nothing may still refer to a part that was left out (CSS selectors that style the dock's look are fine)

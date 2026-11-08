@@ -67,6 +67,23 @@ test('the big clock reads on its own patch of wallpaper, whatever the top edge l
     eq(luminance(q.clock.text) < 0.1, true);
 });
 
+test('the dock wears the bar\'s colours: the same tone of card, whatever the rest of the picture looks like', () => {
+    const sky = flat(235, 240, 245), hills = flat(25, 40, 30);
+    const underSky = paletteFrom([...sky, ...hills], sky);
+    eq([luminance(underSky.bar.text) < 0.1, luminance(underSky.dock.card) > 0.8, luminance(underSky.dock.text) < 0.1], [true, true, true]);
+    eq(underSky.dock.card, underSky.bar.veilColor);
+    eq(underSky.dock.text, underSky.bar.text);
+    const underHills = paletteFrom([...sky, ...hills], hills);
+    eq([luminance(underHills.bar.text) > 0.7, luminance(underHills.dock.card) < 0.1, luminance(underHills.dock.text) > 0.7], [true, true, true]);
+});
+
+test('the dock text reads on the dock card, on any wallpaper', () => {
+    for (const c of [[235, 240, 245], [25, 40, 30], [128, 128, 128], [200, 60, 40]]) {
+        const p = paletteFrom(flat(...c));
+        eq([JSON.stringify(c), contrast(p.dock.text, p.dock.card) >= 7], [JSON.stringify(c), true]);
+    }
+});
+
 test('the average is the wallpaper\'s mean colour', () => {
     eq(paletteFrom([[0, 0, 0], [100, 50, 20]]).average, '#32190A');
     eq(paletteFrom(flat(220, 226, 230)).average, '#DCE2E6');

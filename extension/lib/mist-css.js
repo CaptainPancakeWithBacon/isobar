@@ -93,7 +93,7 @@ StLabel.hint-text,
 #dashtodockContainer .show-apps .overview-icon,
 #dashtodockContainer #dash .show-apps StIcon,
 #dash .show-apps StIcon {
-    color: ${p.bar.text} !important;
+    color: ${p.dock.text} !important;
     -st-icon-style: symbolic;
 }
 

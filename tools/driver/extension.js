@@ -77,14 +77,14 @@ export default class MistDriver extends Extension {
             check('the left-most screen\'s dock is unchanged when Isobar is asked to pin again', (() => { Main.layoutManager.emit('monitors-changed'); return dockSettings.get_string('preferred-monitor-by-connector') === left.name; })());
         }
         if (!EGO && !GLib.getenv('MIST_DOCK_JSON')) {
-            // the dock wears the bar's colourway: a light card under dark bar text, a dark card under light bar text
+            // the dock wears the bar's colours: a light card under dark bar text, a dark one under light bar text, and its icons read on it
             const dockBox = [];
             const seek = a => { if (a.name === 'dashtodockContainer') dockBox.push(a); a.get_children?.().forEach(seek); };
             seek(Main.layoutManager.uiGroup);
             const bg = dockBox.flatMap(d => find(d, 'dash-background')).map(a => bgOf(a)).find(c => c.alpha > 0);
-            const dockLight = bg ? lum(hex(bg)) > 0.4 : null;
-            const barTextDark = lum(fgOf(clocks[0])) < 0.4;
-            check('the dock card is in the bar\'s colourway', bg && dockLight === barTextDark, `dock ${bg ? hex(bg) : 'none'}, bar text ${fgOf(clocks[0])}`);
+            const appsIcon = dockBox.flatMap(d => find(d, 'show-apps')).flatMap(a => { const out = []; const w = x => { if (x.constructor.name === 'St_Icon') out.push(x); x.get_children?.().forEach(w); }; w(a); return out; })[0];
+            check('the dock card is in the bar\'s colours', !!bg && (lum(hex(bg)) > 0.4) === (lum(fgOf(clocks[0])) < 0.4), `dock ${bg ? hex(bg) : 'none'}, bar text ${fgOf(clocks[0])}`);
+            check('the dock\'s icons read on its card', !!bg && !!appsIcon && Math.abs(lum(hex(bg)) - lum(fgOf(appsIcon))) > 0.5, `card ${bg ? hex(bg) : 'none'}, icon ${appsIcon ? fgOf(appsIcon) : 'none'}`);
             const barAlpha = bgOf(panel).alpha;
             check('the dock is as see-through as the bar', bg && Math.abs(bg.alpha - (barAlpha || 140)) <= 4, `dock ${bg?.alpha}, bar ${barAlpha} (140 when the bar has no veil)`);
         }

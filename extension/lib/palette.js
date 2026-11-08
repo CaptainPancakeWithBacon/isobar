@@ -93,6 +93,7 @@ export function paletteFrom(pixels, top = pixels, clock = top, mode = null) {
     const text = useDark ? darkText : lightText;
     const barText = {text, muted: useDark ? tint(0.6, 0.30) : tint(0.4, 0.80)};
     const veil = contrast(text, band) >= 4.5 ? 0 : 0.55;
+    const veilColor = useDark ? tint(0.7, 0.965) : tint(0.9, 0.14);   // a card in the tone of the band: light under dark text, dark under light text
 
     // the big clock sits on its own patch of wallpaper, which is rarely what the top edge looks like.
     // It gets a soft shadow in the opposite tone: a painting is never one flat colour.
@@ -108,7 +109,9 @@ export function paletteFrom(pixels, top = pixels, clock = top, mode = null) {
         ...surface, ...gtk, accent, dark, hue: Math.round(hue), name: 'Isobar', average: hexOf(avg),
         // the same shape the shell template wants for the rest
         ground: band, minor: surface.hover, major: surface.muted, dot: barText.muted,
-        bar: {...barText, veil, veilColor: useDark ? tint(0.7, 0.965) : tint(0.9, 0.14)},
+        bar: {...barText, veil, veilColor},
+        // the dock wears the bar's colours, so the two always match: one scheme, read from the wallpaper's strip under the bar
+        dock: {text: barText.text, card: veilColor},
         clock: clockText,
     };
 }

@@ -75,6 +75,16 @@ export default class MistDriver extends Extension {
             check('and it sits on that screen\'s left edge', docks[0]?.x === left.m.x && docks[0]?.visible, `x ${docks[0]?.x}, screen x ${left.m.x}`);
             check('the left-most screen\'s dock is unchanged when Isobar is asked to pin again', (() => { Main.layoutManager.emit('monitors-changed'); return dockSettings.get_string('preferred-monitor-by-connector') === left.name; })());
         }
+        if (!EGO && !GLib.getenv('MIST_DOCK_JSON')) {
+            // the dock wears the bar's colourway: a light card under dark bar text, a dark card under light bar text
+            const dockBox = [];
+            const seek = a => { if (a.name === 'dashtodockContainer') dockBox.push(a); a.get_children?.().forEach(seek); };
+            seek(Main.layoutManager.uiGroup);
+            const bg = dockBox.flatMap(d => find(d, 'dash-background')).map(a => bgOf(a)).find(c => c.alpha > 0);
+            const dockLight = bg ? lum(hex(bg)) > 0.4 : null;
+            const barTextDark = lum(fgOf(clocks[0])) < 0.4;
+            check('the dock card is in the bar\'s colourway', bg && dockLight === barTextDark, `dock ${bg ? hex(bg) : 'none'}, bar text ${fgOf(clocks[0])}`);
+        }
         const ctx = () => ({
             bar: bgOf(panel), text: fgOf(clocks[0]),
             card: hex(bgOf(quick.menu.box)), cardText: fgOf(quick.menu.box),

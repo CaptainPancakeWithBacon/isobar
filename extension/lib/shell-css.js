@@ -234,9 +234,10 @@ stage {
     background-color: ${p.track};
 }
 
-/* the Ubuntu Dock: the same ink as the bar. The dock takes this colour and applies its own opacity setting to it */
+/* the Ubuntu Dock wears the bar's colourway: a light card when the bar's text is dark, a dark one when it is light (not the wallpaper-wide
+   mode, which can differ from the strip under the bar). The dock takes this colour and applies its own opacity setting to it */
 #dashtodockContainer #dash .dash-background {
-    background-color: ${p.ink};
+    background-color: ${p.bar.veilColor};
 }
 
 .app-folder,

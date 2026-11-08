@@ -81,12 +81,12 @@ export default class MistDriver extends Extension {
             const dockBox = [];
             const seek = a => { if (a.name === 'dashtodockContainer') dockBox.push(a); a.get_children?.().forEach(seek); };
             seek(Main.layoutManager.uiGroup);
-            const bg = dockBox.flatMap(d => find(d, 'dash-background')).map(a => bgOf(a)).find(c => c.alpha > 0);
+            const bg = dockBox.flatMap(d => find(d, 'dash-background')).map(a => bgOf(a))[0];
             const appsIcon = dockBox.flatMap(d => find(d, 'show-apps')).flatMap(a => { const out = []; const w = x => { if (x.constructor.name === 'St_Icon') out.push(x); x.get_children?.().forEach(w); }; w(a); return out; })[0];
             check('the dock card is in the bar\'s colours', !!bg && (lum(hex(bg)) > 0.4) === (lum(fgOf(clocks[0])) < 0.4), `dock ${bg ? hex(bg) : 'none'}, bar text ${fgOf(clocks[0])}`);
             check('the dock\'s icons read on its card', !!bg && !!appsIcon && Math.abs(lum(hex(bg)) - lum(fgOf(appsIcon))) > 0.5, `card ${bg ? hex(bg) : 'none'}, icon ${appsIcon ? fgOf(appsIcon) : 'none'}`);
             const barAlpha = bgOf(panel).alpha;
-            check('the dock is as see-through as the bar', bg && Math.abs(bg.alpha - (barAlpha || 140)) <= 4, `dock ${bg?.alpha}, bar ${barAlpha} (140 when the bar has no veil)`);
+            check('the dock is exactly as see-through as the bar', !!bg && Math.abs(bg.alpha - barAlpha) <= 4, `dock ${bg?.alpha}, bar ${barAlpha}`);
         }
         const ctx = () => ({
             bar: bgOf(panel), text: fgOf(clocks[0]),

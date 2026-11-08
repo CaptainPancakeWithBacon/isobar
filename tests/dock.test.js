@@ -1,5 +1,5 @@
 import {test, eq, done} from './harness.js';
-import {PROFILE, dockOpacity, leftmost, mergeProfile, planDock, remember, same} from '../extension/lib/dock-plan.js';
+import {PROFILE, leftmost, mergeProfile, planDock, remember, same} from '../extension/lib/dock-plan.js';
 
 test('nothing changes when the dock already has the profile (floating-point values included)', () => {
     eq(planDock(PROFILE, k => k === 'hide-delay' ? 0.20000000000000001 : PROFILE[k]), {set: {}, previous: {}});
@@ -38,10 +38,6 @@ test('the dock is permanent and on the left: fixed, never hiding, one dock on a 
 
 test('the dock fills the whole side, top to bottom', () => {
     eq(PROFILE['extend-height'], true);
-});
-
-test('the dock opacity follows the bar: its veil, or a fixed card when the bar has none', () => {
-    eq([dockOpacity(0.55), dockOpacity(0), dockOpacity(0.2)], [0.55, 0.55, 0.2]);
 });
 
 test('the left-most screen is the one with the smallest x', () => {

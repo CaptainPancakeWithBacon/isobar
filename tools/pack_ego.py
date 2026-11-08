@@ -7,7 +7,7 @@ UUID = 'isobar@captainpancakewithbacon.github.io'
 OFF_BY_DEFAULT = ['follow-scheme', 'swap-icons', 'swap-cursor', 'startup-colour', 'terminal-accent']
 LEFT_OUT = ['lib/dock.js', 'lib/dock-plan.js', 'lib/coucou.js', 'lib/coucou-settings.js', 'lib/extra-bars.js']
 DESCRIPTION = (
-    "Isobar takes its colours from your wallpaper: a transparent top bar with the time, workspace dots and the app in front, "
+    "Isobar takes its colours from your wallpaper: a soft see-through top bar with the time, workspace dots and the app in front, "
     "a big clock on the desktop, and shell menus and cards that go light or dark with the picture. It can also colour GNOME apps "
     "(libadwaita) to match.\n\n"
     "Everything that reaches outside the shell is a switch in the preferences: style GNOME apps (writes ~/.config/gtk-4.0/mist.css and "

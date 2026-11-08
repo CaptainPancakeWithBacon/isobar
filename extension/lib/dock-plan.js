@@ -11,7 +11,7 @@ export const PROFILE = {
     'show-delay': 0.25,
     'animation-time': 0.2,
     'dash-max-icon-size': 44,
-    'background-opacity': 0.55,       // only a start: Dock.setOpacity sets the bar's own opacity right after (none when the bar has no veil)
+    'background-opacity': 0.55,       // only a start: Dock.setOpacity sets the bar's own opacity (the veil) right after
     'transparency-mode': 'FIXED',
     'multi-monitor': false,           // one dock, not one per screen
     'preferred-monitor': -2,          // -2: the screen named in preferred-monitor-by-connector, which Dock.pin keeps on the left-most one

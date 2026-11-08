@@ -51,7 +51,7 @@ export class Dock {
             this._write({'preferred-monitor-by-connector': connector});
     }
 
-    /** Keep the dock exactly as see-through as the bar, none at all when the bar has no veil: called with the bar's veil whenever the palette changes. */
+    /** Keep the dock exactly as see-through as the bar: called with the bar's veil whenever the palette changes. */
     setOpacity(veil) {
         if (this._settings && this._managed && !this._ownOpacity)
             this._write({'background-opacity': veil});

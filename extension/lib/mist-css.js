@@ -1,4 +1,4 @@
-// What Isobar adds on top of the shell template: a bar with no background, a big clock, the dots.
+// What Isobar adds on top of the shell template: a bar that is a soft card, a big clock, the dots.
 import {shellCss} from './shell-css.js';
 
 const alpha = (hex, a) => {
@@ -8,9 +8,9 @@ const alpha = (hex, a) => {
 
 export function mistCss(p) {
     const {text, muted, veil, veilColor} = p.bar;
-    const bar = veil ? alpha(veilColor, veil) : 'transparent';
+    const bar = alpha(veilColor, veil);
     return `${shellCss(p)}
-/* Isobar: the bar sits straight on the wallpaper. !important because Ubuntu's Yaru stylesheet paints it black. */
+/* Isobar: the bar is a soft veil in the tone of the wallpaper's top band. !important because Ubuntu's Yaru stylesheet paints it black. */
 #panel,
 #panel:overview {
     height: 28px !important;

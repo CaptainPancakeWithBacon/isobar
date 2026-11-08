@@ -41,7 +41,7 @@ The same extension on three different wallpapers. These are real screenshots fro
 
 ## What you get
 
-**The strip.** The top bar has no background of its own: the time, workspace dots and the app in front on the left, the stock quick settings on the right. It is pinned to 28 px. Its text is dark or light, whichever reads better on the top of your wallpaper, and a soft veil appears only when neither does. Activities and the date menu are hidden.
+**The strip.** The top bar is a soft card, a veil in the tone of the wallpaper's top band: the time, workspace dots and the app in front on the left, the stock quick settings on the right. It is pinned to 28 px. Its text is dark or light, whichever reads better on the top of your wallpaper, on a veil that keeps it readable whatever the picture does. Activities and the date menu are hidden.
 
 **A big clock.** On the desktop, under the windows, in the same light weight as the headline on the website. Its colour is read off the patch of wallpaper it sits on, so it stays legible on busy pictures.
 
@@ -122,7 +122,7 @@ Isobar carries the dock's behaviour and style with it, so the dock looks and act
 | `intellihide-mode` | `ALL_WINDOWS` | Any window triggers hiding |
 | `hide-delay`, `show-delay`, `animation-time` | 0.2, 0.25, 0.2 s | Calm timing |
 | `dash-max-icon-size` | 44 | Icon size |
-| `background-opacity`, `transparency-mode` | the bar's, `FIXED` | The card is exactly as see-through as the bar: its veil, and no card at all when the bar has none. The card wears the bar's colours, so the two always match: a light card under dark bar text, a dark one under light bar text, from the wallpaper's strip under the bar |
+| `background-opacity`, `transparency-mode` | the bar's, `FIXED` | The card is exactly as see-through as the bar: the same veil. The card wears the bar's colours, so the two always match: a light card under dark bar text, a dark one under light bar text, from the wallpaper's strip under the bar |
 | `multi-monitor`, `preferred-monitor` | off, `-2` | One dock only, on the screen named by `preferred-monitor-by-connector` |
 | `preferred-monitor-by-connector` | the left-most screen | Isobar picks it and picks again when you plug a screen in or out |
 | `show-apps-at-top`, `show-mounts`, `show-trash` | off, off, on | Layout |

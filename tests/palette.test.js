@@ -1,5 +1,5 @@
 import {test, eq, done} from './harness.js';
-import {paletteFrom, contrast, luminance, toHsl, fromHsl, hexOf} from '../extension/lib/palette.js';
+import {paletteFrom, contrast, luminance, toHsl, fromHsl, hexOf, rgbOf, VEIL} from '../extension/lib/palette.js';
 
 const flat = (r, g, b, n = 20) => Array.from({length: n}, () => [r, g, b]);
 
@@ -45,11 +45,18 @@ test('bar text is dark on a pale band and light on a dark band, even if the rest
     eq(luminance(paletteFrom([...pale, ...pale], dark).bar.text) > 0.7, true);
 });
 
-test('on a mid-tone band with no good text colour the bar gets a veil; on clear bands it does not', () => {
-    eq(paletteFrom(flat(230, 230, 230)).bar.veil, 0);
-    eq(paletteFrom(flat(20, 20, 30)).bar.veil, 0);
-    const mid = paletteFrom(flat(128, 128, 128)).bar;
-    eq(contrast(mid.text, '#808080') < 4.5 ? mid.veil > 0 : mid.veil === 0, true);
+test('the bar always carries a veil, so the bar and the dock are one visible card on every wallpaper', () => {
+    for (const c of [[230, 230, 230], [20, 20, 30], [128, 128, 128], [60, 140, 200]])
+        eq([JSON.stringify(c), paletteFrom(flat(...c)).bar.veil], [JSON.stringify(c), VEIL]);
+});
+
+test('the veil is in the tone of the band and keeps the bar text readable on top of it, on any band', () => {
+    for (const c of [[230, 230, 230], [20, 20, 30], [128, 128, 128], [60, 140, 200], [235, 240, 245], [25, 40, 30]]) {
+        const {bar} = paletteFrom(flat(...c));
+        const [vr, vg, vb] = rgbOf(bar.veilColor);
+        const under = hexOf([vr * VEIL + c[0] * (1 - VEIL), vg * VEIL + c[1] * (1 - VEIL), vb * VEIL + c[2] * (1 - VEIL)]);
+        eq([JSON.stringify(c), contrast(bar.text, under) >= 4.5], [JSON.stringify(c), true]);
+    }
 });
 
 test('a grey wallpaper does not invent a hue', () => {

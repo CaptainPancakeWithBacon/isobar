@@ -51,6 +51,9 @@ function dominantHue(pixels) {
     return weight < 0.01 * pixels.length ? null : (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 }
 
+/** How opaque the bar's card is, and so the dock's: one soft veil, on every wallpaper, so the bar and the dock always read as the same card. */
+export const VEIL = 0.55;
+
 export const DARK_BELOW = 0.2;   // WCAG luminance of the wallpaper's average; mid grey is about 0.21
 
 /**
@@ -85,14 +88,14 @@ export function paletteFrom(pixels, top = pixels, clock = top, mode = null) {
         textL += dark ? 0.01 : -0.01;
     const accent = {bg: accentAt(accentL), text: accentAt(textL)};
 
-    // the bar has no background of its own: dark text on a light band, light text on a dark one,
-    // whichever reads better, and a soft veil when neither reads well enough
+    // the bar is a soft card in the tone of the wallpaper's top band: dark text on a light band, light text on a dark one,
+    // whichever reads better, on a veil that keeps it readable whatever the picture does
     const band = hexOf(mean(top));
     const darkText = tint(0.9, 0.09), lightText = tint(0.4, 0.96);
     const useDark = contrast(darkText, band) >= contrast(lightText, band);
     const text = useDark ? darkText : lightText;
     const barText = {text, muted: useDark ? tint(0.6, 0.30) : tint(0.4, 0.80)};
-    const veil = contrast(text, band) >= 4.5 ? 0 : 0.55;
+    const veil = VEIL;
     const veilColor = useDark ? tint(0.7, 0.965) : tint(0.9, 0.14);   // a card in the tone of the band: light under dark text, dark under light text
 
     // the big clock sits on its own patch of wallpaper, which is rarely what the top edge looks like.

@@ -42,7 +42,7 @@ The code between `// @full:start` and `// @full:end` is the dock and Coucou part
 
 ## `extension/lib/shell-css.js` ★ and `mist-css.js` ★
 
-Template functions: a palette goes in, CSS text comes out. `shell-css.js` imports GNOME's own dark stylesheet and recolours menus, quick settings, the calendar, notifications, the overview, dialogs and so on. `mist-css.js` adds that on top: a transparent bar, the labels for the clock and dots, the dock's button colours. (The `mist` in names is the project's old working name; it is internal.)
+Template functions: a palette goes in, CSS text comes out. `shell-css.js` imports GNOME's own dark stylesheet and recolours menus, quick settings, the calendar, notifications, the overview, dialogs and so on. `mist-css.js` adds that on top: a bar that is a soft veil, the labels for the clock and dots, the dock's button colours. (The `mist` in names is the project's old working name; it is internal.)
 
 ## `extension/lib/gtk-css.js` ★, `gtk-shape.js` ★, `gtk.js` ★
 

@@ -122,7 +122,7 @@ Isobar carries the dock's behaviour and style with it, so the dock looks and act
 | `intellihide-mode` | `ALL_WINDOWS` | Any window triggers hiding |
 | `hide-delay`, `show-delay`, `animation-time` | 0.2, 0.25, 0.2 s | Calm timing |
 | `dash-max-icon-size` | 44 | Icon size |
-| `background-opacity`, `transparency-mode` | the bar's, `FIXED` | The card is as see-through as the bar: its veil, or 55% when the bar has none. The colour is the bar's colourway, from the wallpaper |
+| `background-opacity`, `transparency-mode` | the bar's, `FIXED` | The card is as see-through as the bar: its veil, or 55% when the bar has none. The card wears the bar's colours, so the two always match: a light card under dark bar text, a dark one under light bar text, from the wallpaper's strip under the bar |
 | `multi-monitor`, `preferred-monitor` | off, `-2` | One dock only, on the screen named by `preferred-monitor-by-connector` |
 | `preferred-monitor-by-connector` | the left-most screen | Isobar picks it and picks again when you plug a screen in or out |
 | `show-apps-at-top`, `show-mounts`, `show-trash` | off, off, on | Layout |

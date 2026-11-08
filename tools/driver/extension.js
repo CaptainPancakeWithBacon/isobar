@@ -59,10 +59,21 @@ export default class MistDriver extends Extension {
         check('the bar is no taller than the 28 px Coucou leaves for it', panel.height <= 28, `${panel.height} px`);
         const dockSettings = EGO ? null : new Gio.Settings({schema_id: 'org.gnome.shell.extensions.dash-to-dock'});
         if (!EGO) {
-            const wantPos = GLib.getenv('MIST_DOCK_JSON') ? JSON.parse(GLib.getenv('MIST_DOCK_JSON'))['dock-position'] ?? 'BOTTOM' : 'BOTTOM';
+            const wantPos = GLib.getenv('MIST_DOCK_JSON') ? JSON.parse(GLib.getenv('MIST_DOCK_JSON'))['dock-position'] ?? 'LEFT' : 'LEFT';
             check('the dock took Isobar\'s position', dockSettings.get_string('dock-position') === wantPos, dockSettings.get_string('dock-position'));
             if (!GLib.getenv('MIST_DOCK_JSON'))
-                check('the dock took Isobar\'s hiding behaviour', dockSettings.get_boolean('autohide') && dockSettings.get_boolean('intellihide') && !dockSettings.get_boolean('dock-fixed'));
+                check('the dock is permanent: fixed, never hiding', !dockSettings.get_boolean('autohide') && !dockSettings.get_boolean('intellihide') && dockSettings.get_boolean('dock-fixed'));
+            // one dock, on the left-most screen, flush with its left edge
+            const manager = global.backend.get_monitor_manager();
+            const screens = Main.layoutManager.monitors.map((m, i) => ({m, name: manager.get_monitors().map(c => c.get_connector()).find(c => manager.get_monitor_for_connector(c) === i)}));
+            const left = screens.reduce((a, b) => (b.m.x < a.m.x || (b.m.x === a.m.x && b.m.y < a.m.y) ? b : a));
+            const docks = [];
+            const walk = (a, d) => { if (d > 5) return; if (a.name === 'dashtodockContainer') docks.push(a); a.get_children?.().forEach(c => walk(c, d + 1)); };
+            walk(Main.layoutManager.uiGroup, 0);
+            check('there is exactly one dock, even with several screens', docks.length === 1, `${docks.length} docks on ${screens.length} screens`);
+            check('the dock is pinned to the left-most screen', dockSettings.get_string('preferred-monitor-by-connector') === left.name && !dockSettings.get_boolean('multi-monitor'), `${dockSettings.get_string('preferred-monitor-by-connector')}, left-most is ${left.name}`);
+            check('and it sits on that screen\'s left edge', docks[0]?.x === left.m.x && docks[0]?.visible, `x ${docks[0]?.x}, screen x ${left.m.x}`);
+            check('the left-most screen\'s dock is unchanged when Isobar is asked to pin again', (() => { Main.layoutManager.emit('monitors-changed'); return dockSettings.get_string('preferred-monitor-by-connector') === left.name; })());
         }
         const ctx = () => ({
             bar: bgOf(panel), text: fgOf(clocks[0]),
@@ -173,14 +184,14 @@ export default class MistDriver extends Extension {
         if (!GLib.getenv('MIST_DOCK_JSON') && !EGO) {
             const savedPath = `${GLib.get_user_cache_dir()}/isobar/dock-previous.json`;
             const saved = JSON.parse(new TextDecoder().decode(GLib.file_get_contents(savedPath)[1]));
-            check('the dock\'s old settings were remembered', 'dock-position' in saved, JSON.stringify(saved).slice(0, 90));
+            check('the dock\'s old settings were remembered', 'extend-height' in saved, JSON.stringify(saved).slice(0, 90));
             Main.extensionManager.disableExtension(UUID);
             await sleep(1500);
-            check('disabling Isobar restores the dock', dockSettings.get_string('dock-position') === saved['dock-position'], dockSettings.get_string('dock-position'));
+            check('disabling Isobar restores the dock', dockSettings.get_boolean('extend-height') === saved['extend-height'] && dockSettings.get_string('preferred-monitor-by-connector') === saved['preferred-monitor-by-connector'], `${dockSettings.get_boolean('extend-height')}, ${dockSettings.get_string('preferred-monitor-by-connector')}`);
             check('and clears the memory file', !GLib.file_test(savedPath, GLib.FileTest.EXISTS));
             Main.extensionManager.enableExtension(UUID);
             await sleep(2500);
-            check('enabling it again takes the dock back', dockSettings.get_string('dock-position') === 'BOTTOM', dockSettings.get_string('dock-position'));
+            check('enabling it again takes the dock back', !dockSettings.get_boolean('extend-height') && dockSettings.get_string('dock-position') === 'LEFT', dockSettings.get_string('dock-position'));
         }
     }
 }

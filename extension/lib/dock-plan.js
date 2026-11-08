@@ -1,11 +1,11 @@
 // The dock profile Isobar applies, and the pure logic around it (what to change, what to remember). Tested under gjs.
-// The defaults are the dock as it was set up when Isobar took it over: a floating pill at the bottom that hides when windows get in the way.
+// The defaults: a permanent floating pill on the left, one dock only, on the left-most screen (see leftmost and Dock.pin).
 export const PROFILE = {
-    'dock-position': 'BOTTOM',
-    'dock-fixed': false,
+    'dock-position': 'LEFT',
+    'dock-fixed': true,               // always there, and windows stop at its edge
     'extend-height': false,
-    'autohide': true,
-    'intellihide': true,
+    'autohide': false,
+    'intellihide': false,
     'intellihide-mode': 'ALL_WINDOWS',
     'hide-delay': 0.2,
     'show-delay': 0.25,
@@ -13,7 +13,8 @@ export const PROFILE = {
     'dash-max-icon-size': 44,
     'background-opacity': 1.0,        // solid: the card colour comes from the wallpaper
     'transparency-mode': 'FIXED',
-    'multi-monitor': true,
+    'multi-monitor': false,           // one dock, not one per screen
+    'preferred-monitor': -2,          // -2: the screen named in preferred-monitor-by-connector, which Dock.pin keeps on the left-most one
     'show-apps-at-top': false,
     'show-mounts': false,
     'show-trash': true,
@@ -30,6 +31,12 @@ export function mergeProfile(base, override) {
         return null;
     const {manage, ...rest} = override;
     return {...base, ...Object.fromEntries(Object.entries(rest).filter(([k, v]) => k in base && typeof v === typeof base[k]))};
+}
+
+/** The connector of the left-most screen, from [{connector, x, y}]. Ties go to the upper one, then to the name, so the answer never flips. */
+export function leftmost(monitors) {
+    const sorted = [...monitors].sort((a, b) => a.x - b.x || a.y - b.y || (a.connector < b.connector ? -1 : a.connector > b.connector ? 1 : 0));
+    return sorted[0]?.connector;
 }
 
 /** What has to change: {set, previous}. `read(key)` gives the current value, or undefined for a key this dock does not have. */

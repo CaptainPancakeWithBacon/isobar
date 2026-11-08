@@ -56,7 +56,12 @@ export default class Isobar extends Extension {
         this._big.add_child(this._bigDate);
         Main.layoutManager._backgroundGroup.add_child(this._big);
         this._place();
-        this._connect(Main.layoutManager, 'monitors-changed', () => this._place());
+        this._connect(Main.layoutManager, 'monitors-changed', () => {
+            this._place();
+            // @full:start
+            this._dock.pin();   // plugging a screen in or out changes which one is left-most
+            // @full:end
+        });
 
         const wm = global.workspace_manager;
         this._connect(wm, 'notify::n-workspaces', () => this._buildDots());

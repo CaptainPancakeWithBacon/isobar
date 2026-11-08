@@ -44,7 +44,7 @@ a:hover { text-decoration-thickness: 2px; }
 .strip .l, .strip .r { display: flex; align-items: center; gap: 1.4cqw; }
 .strip .t { font-weight: 300; font-size: 1.9cqw; letter-spacing: -.02em; color: var(--bar-text); }
 .dots { display: flex; align-items: center; gap: .5cqw; } .dots i { width: .55cqw; height: .55cqw; border-radius: 50%; background: var(--bar-muted); opacity: .6; } .dots i.on { width: 1.8cqw; border-radius: .4cqw; background: var(--bar-text); opacity: 1; }
-.desk .big { position: absolute; left: 5.2cqw; top: 6.4cqw; color: var(--clock-text); text-shadow: 0 .2cqw 2cqw var(--clock-shadow); }
+.desk .big { position: absolute; left: 9.4cqw; top: 6.4cqw; color: var(--clock-text); text-shadow: 0 .2cqw 2cqw var(--clock-shadow); }
 .desk .big b { display: block; font-weight: 200; font-size: 11.6cqw; line-height: 1; letter-spacing: -.045em; }
 .desk .big span { display: block; font-size: 1.6cqw; font-weight: 500; color: var(--clock-muted); margin: .6cqw 0 0 .5cqw; }
 .desk .qs { position: absolute; right: 1.6cqw; top: 5cqw; width: 29cqw; background: var(--surface); color: var(--text); border-radius: 2.4cqw; padding: 2.1cqw; box-shadow: 0 2cqw 5cqw -2cqw rgba(0,0,0,.5), 0 0 0 1px var(--line); z-index: 2; }
@@ -54,8 +54,9 @@ a:hover { text-decoration-thickness: 2px; }
 .qs .tile.on { background: var(--text); color: var(--surface); } .qs .tile.on small { color: color-mix(in oklab, var(--surface) 70%, var(--text)); }
 .qs .sl { display: flex; align-items: center; gap: 1cqw; margin-top: 1.4cqw; font-size: 1cqw; color: var(--muted); }
 .qs .sl u { flex: 1; height: .5cqw; border-radius: .3cqw; background: var(--line); position: relative; text-decoration: none; } .qs .sl u::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--v); background: var(--text); border-radius: inherit; } .qs .sl u::after { content: ""; position: absolute; left: calc(var(--v) - .8cqw); top: 50%; width: 1.6cqw; height: 1.6cqw; margin-top: -.8cqw; border-radius: 50%; background: var(--text); }
-.desk .dock { position: absolute; left: 50%; bottom: 1.8cqw; transform: translateX(-50%); display: flex; gap: 1.1cqw; padding: 1cqw 1.4cqw; background: var(--surface); border-radius: 2.4cqw; box-shadow: 0 1cqw 3cqw -1cqw rgba(0,0,0,.5), 0 0 0 1px var(--line); z-index: 2; }
-.dock i { width: 3.6cqw; height: 3.6cqw; border-radius: 1cqw; background: color-mix(in oklab, var(--accent) var(--m), var(--surface)); }
+.desk .dock { position: absolute; left: 0; top: 4.2cqw; bottom: 0; width: 5.2cqw; display: flex; flex-direction: column; align-items: center; gap: 1.5cqw; padding: 1.6cqw 0; background: var(--dock); z-index: 2; }
+.dock i { position: relative; width: 3cqw; height: 3cqw; border-radius: .9cqw; background: color-mix(in oklab, var(--accent-bg) var(--m), var(--dock-card)); }
+.dock i.run::before { content: ""; position: absolute; left: -.85cqw; top: 50%; width: .45cqw; height: .45cqw; margin-top: -.22cqw; border-radius: 50%; background: var(--accent-bg); }
 .dock i:nth-child(1) { --m: 100%; } .dock i:nth-child(2) { --m: 74%; } .dock i:nth-child(3) { --m: 52%; } .dock i:nth-child(4) { --m: 36%; } .dock i:nth-child(5) { --m: 22%; }
 .pick { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .pick button.wp { width: 92px; height: 58px; border-radius: 14px; border: 2px solid transparent; background: center / cover; cursor: pointer; outline-offset: 3px; box-shadow: 0 0 0 1px color-mix(in oklab, var(--text) 14%, transparent); }

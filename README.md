@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img alt="Isobar on a pink wallpaper: a slim strip, a big clock, the quick settings card and a floating dock, all in the wallpaper's colours" src="docs/media/quick-dusk.webp" width="900">
+  <img alt="Isobar on a pink wallpaper: a slim strip, a big clock, the quick settings card and a dock down the left side, all in the wallpaper's colours" src="docs/media/quick-dusk.webp" width="900">
 </p>
 
 Isobar is an extension for GNOME Shell 50. It reads your wallpaper, works out a palette from it, and restyles the shell, GNOME's own apps, the icons, the pointer, the dock and even the terminal logo to match. Change the wallpaper, or switch light and dark, and everything follows within a second.

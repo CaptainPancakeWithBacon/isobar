@@ -7,12 +7,12 @@ out.mkdir(parents=True, exist_ok=True)
 sh = lambda *a: subprocess.run(a, check=True, capture_output=True, text=True).stdout.strip()
 
 def redact_wifi(png):
-    """The quick settings tile shows the host's network name; replace it. Positions are for the 1600x1000 shots."""
-    bg = sh('magick', png, '-format', '%[pixel:p{1300,228}]', 'info:')
-    colours = sh('magick', png, '-crop', '40x14+1251+191', '+repage', '-colors', '2', '-unique-colors', 'txt:-').splitlines()[1:]
+    """The quick settings tile shows the host's network name; replace it. Positions are for the 1600x1000 shots (the Wi-Fi tile's subtitle sits at about x 1252-1341, y 129-144)."""
+    bg = sh('magick', png, '-format', '%[pixel:p{1300,148}]', 'info:')
+    colours = sh('magick', png, '-crop', '40x14+1251+129', '+repage', '-colors', '2', '-unique-colors', 'txt:-').splitlines()[1:]
     light = max(colours, key=lambda l: sum(int(x) for x in l.split('(')[1].split(')')[0].split(',')[:3]))
     fg = light.split()[2] if light.split()[2].startswith('#') else '#cfd6dc'
-    sh('magick', png, '-fill', bg, '-draw', 'rectangle 1249,207 1344,226', '-fill', fg, '-font', 'Inter', '-pointsize', '12', '-annotate', '+1251+220', 'Home', png)
+    sh('magick', png, '-fill', bg, '-draw', 'rectangle 1249,127 1344,146', '-fill', fg, '-font', 'Inter', '-pointsize', '12', '-annotate', '+1251+141', 'Home', png)
 
 def webp(png, name, q=86, crop=None):
     cmd = ['magick', str(png)] + (['-crop', crop, '+repage'] if crop else []) + ['-strip', '-quality', str(q), str(out / name)]

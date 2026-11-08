@@ -35,6 +35,7 @@ function apply(p) {
   const set = (k, v) => root.style.setProperty(k, v);
   set('--surface', p.ink); set('--text', p.paper); set('--muted', p.muted); set('--track', p.track); set('--line', p.hover);
   set('--card', p.card); set('--accent', p.accent.text); set('--accent-bg', p.accent.bg);
+  set('--dock-card', p.dock.card); set('--dock', alpha(p.dock.card, p.bar.veil || 0.55));   // the dock wears the bar's colours and opacity
   set('--bar-text', p.bar.text); set('--bar-muted', p.bar.muted); set('--bar-veil', p.bar.veil ? alpha(p.bar.veilColor, p.bar.veil) : 'transparent');
   set('--clock-text', p.clock.text); set('--clock-muted', p.clock.muted); set('--clock-shadow', p.clock.shadow);
   document.querySelector('meta[name="theme-color"]').content = p.ink;

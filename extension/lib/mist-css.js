@@ -68,6 +68,26 @@ StLabel.hint-text,
     color: ${p.paper};
 }
 
+/* the dock follows Isobar's accent: the dot under a running app, and feedback when pointing at an icon or when an app has focus */
+#dashtodockContainer #dash .dash-item-container .app-well-app-running-dot,
+#dashtodockContainer #dash .dash-item-container .app-grid-running-dot,
+#dashtodockContainer .app-well-app-running-dot,
+#dashtodockContainer .app-grid-running-dot {
+    background-color: ${p.accent.bg} !important;
+    border-color: ${p.accent.bg} !important;
+}
+
+#dashtodockContainer #dash .dash-item-container .overview-tile:hover .overview-icon,
+#dashtodockContainer #dash .dash-item-container .app-well-app:hover .overview-icon,
+#dashtodockContainer #dash .dash-item-container .show-apps:hover .overview-icon {
+    background-color: ${alpha(p.accent.bg, 0.55)} !important;
+}
+
+#dashtodockContainer #dash .dash-item-container .overview-tile.focused .overview-icon,
+#dashtodockContainer #dash .dash-item-container .app-well-app.focused .overview-icon {
+    background-color: ${alpha(p.accent.bg, 0.3)} !important;
+}
+
 /* the dock's app-grid button is drawn in white by the dock itself, which vanishes on a light pill */
 #dashtodockContainer .show-apps StIcon,
 #dashtodockContainer .show-apps .overview-icon,

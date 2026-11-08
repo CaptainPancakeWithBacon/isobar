@@ -1,9 +1,9 @@
 // The dock profile Isobar applies, and the pure logic around it (what to change, what to remember). Tested under gjs.
-// The defaults: a permanent floating pill on the left, one dock only, on the left-most screen (see leftmost and Dock.pin).
+// The defaults: a permanent dock on the left, top to bottom, one dock only, on the left-most screen (see leftmost and Dock.pin).
 export const PROFILE = {
     'dock-position': 'LEFT',
     'dock-fixed': true,               // always there, and windows stop at its edge
-    'extend-height': false,
+    'extend-height': true,            // the whole side, like the bar is the whole top
     'autohide': false,
     'intellihide': false,
     'intellihide-mode': 'ALL_WINDOWS',
@@ -11,7 +11,7 @@ export const PROFILE = {
     'show-delay': 0.25,
     'animation-time': 0.2,
     'dash-max-icon-size': 44,
-    'background-opacity': 1.0,        // solid: the card colour comes from the wallpaper
+    'background-opacity': 0.55,       // the card colour comes from the wallpaper; Dock.setOpacity keeps the opacity level with the bar's
     'transparency-mode': 'FIXED',
     'multi-monitor': false,           // one dock, not one per screen
     'preferred-monitor': -2,          // -2: the screen named in preferred-monitor-by-connector, which Dock.pin keeps on the left-most one
@@ -20,6 +20,9 @@ export const PROFILE = {
     'show-trash': true,
     'apply-custom-theme': false,      // Isobar styles the dock itself
 };
+
+/** The dock's opacity: the bar's veil when it has one, else a fixed card (a dock with no background at all would leave icons loose on the wallpaper). */
+export const dockOpacity = veil => veil > 0 ? veil : 0.55;
 
 export const same = (a, b) => typeof a === 'number' && typeof b === 'number' ? Math.abs(a - b) < 1e-6 : a === b;
 

@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-import {PROFILE, leftmost, mergeProfile, planDock, remember} from './dock-plan.js';
+import {PROFILE, dockOpacity, leftmost, mergeProfile, planDock, remember} from './dock-plan.js';
 
 const SCHEMA = 'org.gnome.shell.extensions.dash-to-dock';
 const readJson = path => {
@@ -27,8 +27,10 @@ export class Dock {
     apply() {
         if (!this._settings)
             return;
-        const profile = mergeProfile(PROFILE, readJson(`${GLib.get_user_config_dir()}/isobar/dock.json`));
+        const override = readJson(`${GLib.get_user_config_dir()}/isobar/dock.json`);
+        const profile = mergeProfile(PROFILE, override);
         this._managed = !!profile;
+        this._ownOpacity = typeof override?.['background-opacity'] === 'number';   // the user chose one, so the bar does not
         if (profile) {
             this._write(profile);
             this.pin();
@@ -47,6 +49,12 @@ export class Dock {
         const connector = leftmost(screens);
         if (connector)
             this._write({'preferred-monitor-by-connector': connector});
+    }
+
+    /** Keep the dock as see-through as the bar: called with the bar's veil whenever the palette changes. */
+    setOpacity(veil) {
+        if (this._settings && this._managed && !this._ownOpacity)
+            this._write({'background-opacity': dockOpacity(veil)});
     }
 
     _write(profile) {

@@ -73,6 +73,7 @@ export default class MistDriver extends Extension {
             check('there is exactly one dock, even with several screens', docks.length === 1, `${docks.length} docks on ${screens.length} screens`);
             check('the dock is pinned to the left-most screen', dockSettings.get_string('preferred-monitor-by-connector') === left.name && !dockSettings.get_boolean('multi-monitor'), `${dockSettings.get_string('preferred-monitor-by-connector')}, left-most is ${left.name}`);
             check('and it sits on that screen\'s left edge', docks[0]?.x === left.m.x && docks[0]?.visible, `x ${docks[0]?.x}, screen x ${left.m.x}`);
+            check('the dock fills the whole side, top to bottom', docks[0]?.height >= left.m.height - 40, `${docks[0]?.height} of ${left.m.height} px`);
             check('the left-most screen\'s dock is unchanged when Isobar is asked to pin again', (() => { Main.layoutManager.emit('monitors-changed'); return dockSettings.get_string('preferred-monitor-by-connector') === left.name; })());
         }
         if (!EGO && !GLib.getenv('MIST_DOCK_JSON')) {
@@ -84,6 +85,8 @@ export default class MistDriver extends Extension {
             const dockLight = bg ? lum(hex(bg)) > 0.4 : null;
             const barTextDark = lum(fgOf(clocks[0])) < 0.4;
             check('the dock card is in the bar\'s colourway', bg && dockLight === barTextDark, `dock ${bg ? hex(bg) : 'none'}, bar text ${fgOf(clocks[0])}`);
+            const barAlpha = bgOf(panel).alpha;
+            check('the dock is as see-through as the bar', bg && Math.abs(bg.alpha - (barAlpha || 140)) <= 4, `dock ${bg?.alpha}, bar ${barAlpha} (140 when the bar has no veil)`);
         }
         const ctx = () => ({
             bar: bgOf(panel), text: fgOf(clocks[0]),
@@ -131,6 +134,23 @@ export default class MistDriver extends Extension {
         GLib.spawn_command_line_async(GLib.getenv('MIST_APP_CMD') ?? 'nautilus --new-window');
         await sleep(6000);
         await screenshot('app');
+        if (!EGO && !GLib.getenv('MIST_DOCK_JSON')) {
+            const roots = [];
+            const seek = a => { if (a.name === 'dashtodockContainer') roots.push(a); a.get_children?.().forEach(seek); };
+            seek(Main.layoutManager.uiGroup);
+            const dot = roots.flatMap(d => [...find(d, 'app-well-app-running-dot'), ...find(d, 'app-grid-running-dot')]).map(a => bgOf(a)).find(c => c.alpha > 0);
+            check('the dot under a running app is the accent', !!dot && hex(dot) === hex(hov), `dot ${dot ? hex(dot) : 'none'}, accent ${hex(hov)}`);
+            const icon = roots.flatMap(d => find(d, 'overview-icon'))[0];
+            let tile = icon?.get_parent();
+            while (tile && !['app-well-app', 'overview-tile', 'show-apps'].some(c => tile.has_style_class_name?.(c)))
+                tile = tile.get_parent();
+            tile?.add_style_pseudo_class('hover');
+            await sleep(500);
+            const hoverBg = icon && bgOf(icon);
+            check('pointing at a dock icon fills it with the accent', !!hoverBg && hex(hoverBg) === hex(hov) && hoverBg.alpha > 100, hoverBg ? `${hex(hoverBg)} alpha ${hoverBg.alpha}` : 'no icon');
+            await screenshot('dock-hover');
+            tile?.remove_style_pseudo_class('hover');
+        }
         Main.overview.show();
         await sleep(2000);
         await screenshot('overview-app');   // the overview with a window in it
@@ -194,14 +214,14 @@ export default class MistDriver extends Extension {
         if (!GLib.getenv('MIST_DOCK_JSON') && !EGO) {
             const savedPath = `${GLib.get_user_cache_dir()}/isobar/dock-previous.json`;
             const saved = JSON.parse(new TextDecoder().decode(GLib.file_get_contents(savedPath)[1]));
-            check('the dock\'s old settings were remembered', 'extend-height' in saved, JSON.stringify(saved).slice(0, 90));
+            check('the dock\'s old settings were remembered', 'autohide' in saved, JSON.stringify(saved).slice(0, 90));
             Main.extensionManager.disableExtension(UUID);
             await sleep(1500);
-            check('disabling Isobar restores the dock', dockSettings.get_boolean('extend-height') === saved['extend-height'] && dockSettings.get_string('preferred-monitor-by-connector') === saved['preferred-monitor-by-connector'], `${dockSettings.get_boolean('extend-height')}, ${dockSettings.get_string('preferred-monitor-by-connector')}`);
+            check('disabling Isobar restores the dock', dockSettings.get_boolean('autohide') === saved.autohide && dockSettings.get_string('preferred-monitor-by-connector') === saved['preferred-monitor-by-connector'], `${dockSettings.get_boolean('autohide')}, ${dockSettings.get_string('preferred-monitor-by-connector')}`);
             check('and clears the memory file', !GLib.file_test(savedPath, GLib.FileTest.EXISTS));
             Main.extensionManager.enableExtension(UUID);
             await sleep(2500);
-            check('enabling it again takes the dock back', !dockSettings.get_boolean('extend-height') && dockSettings.get_string('dock-position') === 'LEFT', dockSettings.get_string('dock-position'));
+            check('enabling it again takes the dock back', !dockSettings.get_boolean('autohide') && dockSettings.get_string('dock-position') === 'LEFT', dockSettings.get_string('dock-position'));
         }
     }
 }

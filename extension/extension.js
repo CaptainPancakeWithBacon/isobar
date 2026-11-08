@@ -147,6 +147,7 @@ export default class Isobar extends Extension {
             this._login.set_string('background-color', this._palette.average);
         // @full:start
         this._coucou.sync(this._palette.ink);   // Coucou's island wears the card colour
+        this._dock.setOpacity(this._palette.bar.veil);   // and the dock is as see-through as the bar
         // @full:end
 
         const dir = `${GLib.get_user_cache_dir()}/mist`;

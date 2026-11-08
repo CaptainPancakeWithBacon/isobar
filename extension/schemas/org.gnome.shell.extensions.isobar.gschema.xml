@@ -31,5 +31,10 @@
       <summary>Share the accent colour</summary>
       <description>Write the current accent colour to ~/.cache/isobar/accent so a terminal logo can use it.</description>
     </key>
+    <key name="adaptive-icons" type="b">
+      <default>true</default>
+      <summary>Isobar icons</summary>
+      <description>Write an icon theme drawn from the wallpaper's colours: round plates, original icons for GNOME's own apps, every other app's icon on the same plate. The icon theme you had is put back when this is turned off.</description>
+    </key>
   </schema>
 </schemalist>

@@ -6,7 +6,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 # MIST_EXT_DIR / MIST_EXT_UUID: test another build of the extension, for example the unpacked listing edition (with MIST_EDITION=ego)
 EXT_DIR=${MIST_EXT_DIR:-$(cd "$(dirname "$0")/.." && pwd)/extension}
 export ROOT MIST_OUT=${MIST_OUT:-$(mktemp -d)} MIST_EXT_UUID=${MIST_EXT_UUID:-mist@gijs.dev} MIST_EDITION=${MIST_EDITION:-full}
-[ -f "$EXT_DIR/schemas/gschemas.compiled" ] || glib-compile-schemas "$EXT_DIR/schemas"
+if [ ! -f "$EXT_DIR/schemas/gschemas.compiled" ] || [ -n "$(find "$EXT_DIR/schemas" -name "*.xml" -newer "$EXT_DIR/schemas/gschemas.compiled")" ]; then glib-compile-schemas "$EXT_DIR/schemas"; fi
 TMP=$(mktemp -d)
 # the throwaway document portal may still hold its FUSE mount in $TMP/run/doc a moment after the session ends
 trap 'fusermount3 -u -z "$TMP/run/doc" 2>/dev/null || true; rm -rf "$TMP"' EXIT

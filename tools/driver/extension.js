@@ -7,6 +7,7 @@ import St from 'gi://St';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Config from 'resource:///org/gnome/shell/misc/config.js';
+import {Spinner} from 'resource:///org/gnome/shell/ui/animation.js';
 
 const OUT = GLib.getenv('MIST_OUT');
 const UUID = GLib.getenv('MIST_EXT_UUID') ?? 'mist@gijs.dev';
@@ -105,6 +106,38 @@ export default class MistDriver extends Extension {
         const startup = login.get_string('background-color');
         check(EGO ? 'the start-up colour is left alone until the user switches it on' : 'the start-up colour is set to the wallpaper average, not left to the stock grey', EGO ? startup === '' : /^#[0-9A-F]{6}$/.test(startup), startup);
         await screenshot('desktop');
+        if (!EGO) {
+            const ifaceNow = new Gio.Settings({schema_id: 'org.gnome.desktop.interface'});
+            const theme = ifaceNow.get_string('icon-theme'), tdir = `${GLib.get_user_data_dir()}/icons/${theme}`;
+            const has = rel => GLib.file_test(`${tdir}/${rel}`, GLib.FileTest.EXISTS);
+            const readIdx = new TextDecoder().decode(GLib.file_get_contents(`${tdir}/index.theme`)[1]);
+            check('Isobar\'s icon theme is in use', /^Isobar(-2)?$/.test(theme), theme);
+            check('it names a parent theme, so every other icon still shows', /Inherits=(Papirus-(Light|Dark)|Adwaita|Yaru)/.test(readIdx), (readIdx.match(/Inherits=.*/) ?? [''])[0]);
+            check('the drawn icons are there, the bin among the places', has('scalable/apps/org.gnome.Nautilus.svg') && has('scalable/apps/org.gnome.Calculator.svg') && has('scalable/places/user-trash.svg'));
+            const plates = [];
+            const en = Gio.File.new_for_path(`${tdir}/scalable/apps`).enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
+            for (let i = en.next_file(null); i; i = en.next_file(null)) plates.push(i.get_name());
+            check('other apps got a plate too', plates.length > 13, `${plates.length} icons in apps/`);
+            check('the plates are the apps\' own drawing inside Isobar\'s round plate', plates.some(n => { const t = new TextDecoder().decode(GLib.file_get_contents(`${tdir}/scalable/apps/${n}`)[1]); return t.includes('<circle cx="32" cy="32" r="30"') && t.includes('<svg x="13" y="13"'); }));
+            // the loading wheel: a real shell Spinner shows the logo's three half-rings, turning, and lets go of them when it stops
+            const wheel = new Spinner(96, {animate: false});
+            Main.uiGroup.add_child(wheel);
+            wheel.set_position(700, 400);
+            wheel.play();
+            await sleep(700);
+            const angles = () => (wheel._isobar ?? []).map(i => i.rotation_angle_z);
+            const first = angles();
+            await sleep(400);
+            const later = angles();
+            check('the loading wheel is Isobar\'s three half-rings', first.length === 3 && wheel.get_n_children() === 3, `${first.length} rings`);
+            check('and the rings are turning', later.length === 3 && later.some((a, i) => Math.abs(a - first[i]) > 5), `${first.map(a => a.toFixed(0))} -> ${later.map(a => a.toFixed(0))}`);
+            await screenshot('spinner');
+            wheel.stop();
+            await sleep(1000);
+            check('the rings are gone once it stops', wheel.get_n_children() === 0, `${wheel.get_n_children()} children left`);
+            wheel.destroy();
+            check('the icon theme from before is remembered', new TextDecoder().decode(GLib.file_get_contents(`${GLib.get_user_cache_dir()}/isobar/icons-previous`)[1]).startsWith('Papirus'));
+        }
         // the top bar's hover state, forced: pointing at a bar button fills it with the accent and turns its icons white
         quick.add_style_pseudo_class('hover');
         await sleep(500);
@@ -219,8 +252,17 @@ export default class MistDriver extends Extension {
             await sleep(1500);
             check('disabling Isobar restores the dock', dockSettings.get_boolean('autohide') === saved.autohide && dockSettings.get_string('preferred-monitor-by-connector') === saved['preferred-monitor-by-connector'], `${dockSettings.get_boolean('autohide')}, ${dockSettings.get_string('preferred-monitor-by-connector')}`);
             check('and clears the memory file', !GLib.file_test(savedPath, GLib.FileTest.EXISTS));
+            const ifaceBack = new Gio.Settings({schema_id: 'org.gnome.desktop.interface'});
+            check('the icon theme from before is back, and Isobar\'s folders are gone', ifaceBack.get_string('icon-theme').startsWith('Papirus') && !GLib.file_test(`${GLib.get_user_data_dir()}/icons/Isobar`, GLib.FileTest.EXISTS) && !GLib.file_test(`${GLib.get_user_data_dir()}/icons/Isobar-2`, GLib.FileTest.EXISTS), ifaceBack.get_string('icon-theme'));
+            const stock = new Spinner(48, {animate: false});
+            Main.uiGroup.add_child(stock);
+            stock.play();
+            await sleep(300);
+            check('with Isobar off the shell\'s own wheel is back', stock.get_n_children() === 0 && !!stock.content, `${stock.get_n_children()} children`);
+            stock.destroy();
             Main.extensionManager.enableExtension(UUID);
             await sleep(2500);
+            check('and Isobar\'s icon theme comes back with it', /^Isobar/.test(new Gio.Settings({schema_id: 'org.gnome.desktop.interface'}).get_string('icon-theme')));
             check('enabling it again takes the dock back', !dockSettings.get_boolean('autohide') && dockSettings.get_string('dock-position') === 'LEFT', dockSettings.get_string('dock-position'));
         }
     }

@@ -17,6 +17,8 @@ import {Strip} from './lib/strip.js';
 import {CoucouSync} from './lib/coucou.js';
 import {Dock} from './lib/dock.js';
 import {ExtraBars} from './lib/extra-bars.js';
+import {IconTheme} from './lib/icon-theme.js';
+import {IsobarSpinner} from './lib/spinner.js';
 // @full:end
 
 export default class Isobar extends Extension {
@@ -32,6 +34,8 @@ export default class Isobar extends Extension {
         // @full:start
         this._coucou = new CoucouSync();
         this._dock = new Dock();
+        this._icons = new IconTheme(this._iface);
+        this._spinner = new IsobarSpinner();
         this._dock.apply();   // position, hiding, size, opacity: the dock comes with Isobar
         // @full:end
 
@@ -105,8 +109,10 @@ export default class Isobar extends Extension {
         // GNOME also disables extensions while the screen is locked; the dock should not be reset and set again then
         if (Main.sessionMode.currentMode !== 'unlock-dialog')
             this._dock.restore();
+        this._icons.restore();
+        this._spinner.restore();
         this._coucou.destroy();
-        this._dock = this._coucou = null;
+        this._dock = this._coucou = this._icons = this._spinner = null;
         // @full:end
         // @full:start
         if (this._extraSync)
@@ -136,6 +142,16 @@ export default class Isobar extends Extension {
                 this._iface.set_string('color-scheme', scheme);   // its change handler restyles once more, without following
         }
         this._syncIcons();
+        // @full:start
+        // Isobar's icons: drawn from this palette; the theme in use before is put back when the switch goes off
+        if (on('adaptive-icons')) {
+            this._icons.apply(this._palette, this._iface.get_string('color-scheme') === 'prefer-dark');
+            this._spinner.apply(this._palette);   // and the loading wheel
+        } else {
+            this._icons.restore();
+            this._spinner.restore();
+        }
+        // @full:end
         this._shareAccent(on('terminal-accent'));
         // libadwaita apps get both palettes, whatever mode the wallpaper is in: GTK picks the one that applies, live
         if (on('style-apps'))

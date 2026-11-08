@@ -74,21 +74,32 @@ export default class LockDriver extends Extension {
         await sleep(3000);
         report('unlocked');
         await screenshot('unlocked');
+        const extras = () => panels().filter(a => a.has_style_class_name?.('multimonitor-panel'));
+        check('Multi Monitor Bar draws a bar on the other screen', extras().length === 1, `${extras().length} extra bars`);
+        for (const bar of extras()) {
+            const clock = find(bar, 'mist-clock')[0];
+            check('the other screen\'s bar carries Isobar\'s strip: time, dots, app', !!clock && find(bar, 'mist-clock').length === 1 && find(bar, 'mist-dot').length === global.workspace_manager.n_workspaces && find(bar, 'mist-app').length === 1, `${find(bar, 'mist-clock').length} clock, ${find(bar, 'mist-dot').length} dots`);
+            check('and it shows the same time as the main bar', clock?.text === find(Main.panel, 'mist-clock')[0].text, `${clock?.text} / ${find(Main.panel, 'mist-clock')[0].text}`);
+            check('the mirrored date is out of sight', find(bar, 'clock-display').every(a => !a.mapped), `${find(bar, 'clock-display').length} date button(s)`);
+        }
         Main.sessionMode.pushMode('unlock-dialog');   // what ScreenShield does when you press Super+S
         await sleep(2500);
         report('locked');
         await screenshot('locked');
         const ext = Main.extensionManager.lookup(GLib.getenv('MIST_EXT_UUID') ?? 'mist@gijs.dev');
         check('Isobar stays enabled while locked', ext?.state === 1, `state ${ext?.state}`);
-        const solid = panels().filter(a => a.name === 'panel' && a.get_theme_node && alphaOf(a) > 0);
+        const solid = panels().filter(a => a.name === 'panel' && a.get_theme_node && alphaOf(a) > 200);   // a soft veil is by design; black is not
         check('no bar turns solid on the lock screen', solid.length === 0, `${solid.length} solid`);
         check('the lock screen bar shows no clock, dots or app name', find(Main.panel, 'mist-clock').every(a => !a.mapped));
+        check('the other screens\' strips are hidden while locked too', extras().every(bar => find(bar, 'mist-clock').every(a => !a.mapped)));
         Main.sessionMode.popMode('unlock-dialog');
         await sleep(2500);
         report('unlocked again');
         check('Activities and the date menu are hidden again after unlocking', !Main.panel.statusArea.activities.container.visible && !Main.panel.statusArea.dateMenu.container.visible);
         check('the clock is back in the bar', find(Main.panel, 'mist-clock').some(a => a.mapped));
-        const solidAgain = panels().filter(a => a.name === 'panel' && alphaOf(a) > 0);
-        check('every bar is transparent again', solidAgain.length === 0, `${solidAgain.length} solid`);
+        check('and on the other screen\'s bar', extras().length === 1 && extras().every(bar => find(bar, 'mist-clock').some(a => a.mapped)), `${extras().length} extra bars`);
+        check('the mirrored date stays hidden after a lock', extras().every(bar => find(bar, 'clock-display').every(a => !a.mapped)));
+        const solidAgain = panels().filter(a => a.name === 'panel' && alphaOf(a) > 200);
+        check('no bar is opaque again', solidAgain.length === 0, `${solidAgain.length} solid`);
     }
 }

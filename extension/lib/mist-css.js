@@ -73,8 +73,13 @@ StLabel.hint-text,
 #dashtodockContainer .show-apps .overview-icon,
 #dashtodockContainer #dash .show-apps StIcon,
 #dash .show-apps StIcon {
-    color: ${p.paper} !important;
+    color: ${p.bar.text} !important;
     -st-icon-style: symbolic;
+}
+
+/* Multi Monitor Bar mirrors the date into the middle of its bars; Isobar hides it (extra-bars.js), and this keeps it unreadable if it ever comes back */
+.multimonitor-panel .panel-button.clock-display * {
+    color: transparent !important;
 }
 
 .mist-clock {

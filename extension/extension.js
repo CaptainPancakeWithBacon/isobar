@@ -12,13 +12,12 @@ import {sample} from './lib/wallpaper.js';
 import {mistCss} from './lib/mist-css.js';
 import {gtkCss} from './lib/gtk-css.js';
 import {applyGtk, removeGtk} from './lib/gtk.js';
+import {Strip} from './lib/strip.js';
 // @full:start
 import {CoucouSync} from './lib/coucou.js';
 import {Dock} from './lib/dock.js';
+import {ExtraBars} from './lib/extra-bars.js';
 // @full:end
-
-const DOT = 6;
-const LONG = 20;
 
 export default class Isobar extends Extension {
     enable() {
@@ -41,12 +40,14 @@ export default class Isobar extends Extension {
         this._hidden.forEach(item => item.container.hide());
 
         // left of the bar: the time, the workspace dots, the app in front
-        this._time = new St.Label({style_class: 'mist-clock', y_align: Clutter.ActorAlign.CENTER});
-        this._dots = new St.BoxLayout({y_align: Clutter.ActorAlign.CENTER, style: 'spacing: 6px; margin: 0 18px;'});
-        this._app = new St.Label({style_class: 'mist-app', y_align: Clutter.ActorAlign.CENTER});
-        this._left = new St.BoxLayout({style: 'margin-left: 10px;', y_align: Clutter.ActorAlign.CENTER});
-        [this._time, this._dots, this._app].forEach(a => this._left.add_child(a));
-        panel._leftBox.insert_child_at_index(this._left, 0);
+        this._strip = new Strip();
+        this._strips = [this._strip];
+        panel._leftBox.insert_child_at_index(this._strip.box, 0);
+        // @full:start
+        // the bars Multi Monitor Bar draws on other screens get the same strip
+        this._extra = new ExtraBars(() => this._newStrip());
+        this._extraSync = null;
+        // @full:end
 
         // on the desktop, under the windows: the big clock
         this._big = new St.BoxLayout({vertical: true, style: 'spacing: 4px;'});
@@ -60,8 +61,13 @@ export default class Isobar extends Extension {
             this._place();
             // @full:start
             this._dock.pin();   // plugging a screen in or out changes which one is left-most
+            this._queueExtra();
             // @full:end
         });
+        // @full:start
+        this._connect(Main.layoutManager.uiGroup, 'child-added', () => this._queueExtra());   // Multi Monitor Bar rebuilds its bars on its own schedule
+        this._queueExtra();
+        // @full:end
 
         const wm = global.workspace_manager;
         this._connect(wm, 'notify::n-workspaces', () => this._buildDots());
@@ -102,11 +108,17 @@ export default class Isobar extends Extension {
         this._coucou.destroy();
         this._dock = this._coucou = null;
         // @full:end
-        this._left.destroy();
+        // @full:start
+        if (this._extraSync)
+            GLib.source_remove(this._extraSync);
+        this._extra.destroy();
+        this._extra = this._extraSync = null;
+        // @full:end
+        this._strip.box.destroy();
         this._big.destroy();
         this._hidden.forEach(item => item.container.show());
         this._settings = this._bg = this._iface = this._login = this._ids = this._clock = null;
-        this._left = this._big = this._time = this._dots = this._app = this._bigTime = this._bigDate = this._hidden = null;
+        this._strip = this._strips = this._big = this._bigTime = this._bigDate = this._hidden = null;
     }
 
     _connect(object, signal, handler) {
@@ -189,35 +201,51 @@ export default class Isobar extends Extension {
     _tick() {
         const now = new Date();
         const hm = now.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'});
-        this._time.text = hm;
+        this._strips.forEach(strip => { strip.time.text = hm; });
         this._bigTime.text = hm;
         this._bigDate.text = now.toLocaleDateString('en-GB', {weekday: 'long', day: 'numeric', month: 'long'});
     }
 
     _buildDots() {
         const wm = global.workspace_manager;
-        const current = wm.get_active_workspace_index();
-        this._dots.destroy_all_children();
-        for (let i = 0; i < wm.n_workspaces; i++) {
-            const active = i === current;
-            this._dots.add_child(new St.Widget({
-                style_class: active ? 'mist-dot mist-dot-active' : 'mist-dot',
-                width: active ? LONG : DOT,
-                y_align: Clutter.ActorAlign.CENTER,
-                y_expand: true,
-            }));
-        }
+        this._strips.forEach(strip => strip.setDots(wm.n_workspaces, wm.get_active_workspace_index()));
     }
+
+    // @full:start
+    // a strip for another screen's bar, showing what the main one shows
+    _newStrip() {
+        const strip = new Strip();
+        const wm = global.workspace_manager;
+        strip.time.text = this._strip.time.text;
+        strip.app.text = this._strip.app.text;
+        strip.setDots(wm.n_workspaces, wm.get_active_workspace_index());
+        strip.box.visible = Main.sessionMode.currentMode !== 'unlock-dialog';
+        this._strips.push(strip);
+        strip.box.connect('destroy', () => { this._strips = this._strips.filter(s => s !== strip); });
+        return strip;
+    }
+
+    // one pass after the shell is done with what it is doing, however many bars were added at once
+    _queueExtra() {
+        if (this._extraSync)
+            return;
+        this._extraSync = GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+            this._extraSync = null;
+            this._extra.sync();
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+    // @full:end
 
     // On the lock screen the bar shows no clock, dots or app name: what you had open is nobody's business.
     _syncMode() {
         this._hidden.forEach(item => item.container.hide());
-        this._left.visible = Main.sessionMode.currentMode !== 'unlock-dialog';
+        this._strips.forEach(strip => { strip.box.visible = Main.sessionMode.currentMode !== 'unlock-dialog'; });
     }
 
     _syncApp() {
         const win = global.display.focus_window;
         const app = win ? Shell.WindowTracker.get_default().get_window_app(win) : null;
-        this._app.text = app ? app.get_name() : '';
+        this._strips.forEach(strip => { strip.app.text = app ? app.get_name() : ''; });
     }
 }

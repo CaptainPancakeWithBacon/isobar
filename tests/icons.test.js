@@ -1,6 +1,6 @@
 import {test, eq, done} from './harness.js';
 import {paletteFrom} from '../extension/lib/palette.js';
-import {CORE, GLYPHS, coreIcon, iconColours, plated, spinner} from '../extension/lib/icons.js';
+import {CORE, GLYPHS, coreIcon, iconColours, plated, ringSvg, spinner, spinnerRings} from '../extension/lib/icons.js';
 
 const px = (r, g, b) => Array.from({length: 20}, () => [r, g, b]);
 // Checks the two ways a hand-built SVG goes wrong: a tag that repeats an attribute (which makes the whole icon fail to load) and tags that do not balance
@@ -39,6 +39,13 @@ test('the spinner is well-formed, animated or frozen at a moment', () => {
     const c = iconColours(palettes[0]);
     eq([wellFormed(spinner(c)), wellFormed(spinner(c, 24, 0.5))], [true, true]);
     eq([spinner(c).includes('animateTransform'), spinner(c, 24, 0.5).includes('animateTransform')], [true, false]);
+});
+
+test('the wheel has three rings at three different speeds, and each ring is an SVG of its own', () => {
+    const rings = spinnerRings(iconColours(palettes[1]));
+    eq(rings.length, 3);
+    eq(new Set(rings.map(r => r.dur)).size, 3);
+    eq(rings.every(r => wellFormed(ringSvg(r)) === true && ringSvg(r).includes(`stroke="${r.color}"`)), true);
 });
 
 test('another app\'s own icon goes on the plate, scaled into the middle', () => {

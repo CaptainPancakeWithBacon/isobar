@@ -42,14 +42,14 @@ export const CORE = {
     settings: ['org.gnome.Settings', 'preferences-system'],
     calculator: ['org.gnome.Calculator', 'accessories-calculator'],
     editor: ['org.gnome.TextEditor', 'org.gnome.gedit', 'accessories-text-editor'],
-    calendar: ['org.gnome.Calendar', 'x-office-calendar'],
-    images: ['org.gnome.Loupe', 'org.gnome.eog', 'image-x-generic'],
-    music: ['org.gnome.Rhythmbox3', 'org.gnome.Music', 'audio-x-generic'],
-    videos: ['org.gnome.Showtime', 'org.gnome.Totem', 'video-x-generic'],
+    calendar: ['org.gnome.Calendar', 'gnome-calendar'],
+    images: ['org.gnome.Loupe', 'org.gnome.eog', 'eog'],
+    music: ['org.gnome.Rhythmbox3', 'org.gnome.Music', 'rhythmbox'],
+    videos: ['org.gnome.Showtime', 'org.gnome.Totem', 'totem'],
     software: ['org.gnome.Software', 'snap-store', 'ubuntu-software'],
-    disks: ['org.gnome.DiskUtility', 'drive-harddisk'],
+    disks: ['org.gnome.DiskUtility', 'gnome-disks'],
     help: ['org.gnome.Yelp', 'help-browser', 'help-contents'],
-    trash: ['user-trash', 'user-trash-full', 'org.gnome.Nautilus.trash'],
+    trash: ['user-trash', 'user-trash-full'],
 };
 
 /** A finished icon: plate plus glyph. */
@@ -64,19 +64,27 @@ export function plated(c, inner) {
     return svg(disc(c) + `<svg x="13" y="13" width="38" height="38" viewBox="${box}">${body}</svg>`);
 }
 
-/** The loading wheel: three half-rings of the logo, turning at their own pace. `t` freezes it at a moment in seconds (for filmstrip frames), otherwise it animates. */
+/** The loading wheel's three half-rings: how they look and how fast each turns (seconds per turn, direction, where it starts). */
+export const spinnerRings = c => [
+    {r: 25, w: 4.2, color: c.accent, dur: 1.2, dir: 1, from: 0},
+    {r: 17, w: 3.6, color: c.glyph, dur: 1.8, dir: -1, from: 90},
+    {r: 9, w: 3, color: c.accent, dur: 2.4, dir: 1, from: 200},
+];
+
+/** One half-ring as an SVG on its own, for a widget that turns it. */
+export function ringSvg(ring, size = 64) {
+    const a = (150 * Math.PI) / 180, x = 32 + ring.r * Math.cos(a), y = 32 + ring.r * Math.sin(a);
+    return svg(`<path d="M${32 + ring.r} 32A${ring.r} ${ring.r} 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)}" fill="none" stroke="${ring.color}" stroke-width="${ring.w}" stroke-linecap="round"/>`, size);
+}
+
+/** The loading wheel: the three half-rings of the logo, turning at their own pace. `t` freezes it at a moment in seconds (for filmstrip frames), otherwise it animates. */
 export function spinner(c, size = 64, t = null) {
-    const ring = (r, turn, sweep) => {
-        const a = (sweep * Math.PI) / 180, x = 32 + r * Math.cos(a), y = 32 + r * Math.sin(a);
-        const path = `<path d="M${32 + r} 32A${r} ${r} 0 ${sweep > 180 ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)}" fill="none" stroke="${turn.color}" stroke-width="${turn.w}" stroke-linecap="round"/>`;
-        const spin = t === null
-            ? `<animateTransform attributeName="transform" type="rotate" from="${turn.from} 32 32" to="${turn.from + turn.dir * 360} 32 32" dur="${turn.dur}s" repeatCount="indefinite"/>`
+    return svg(spinnerRings(c).map(ring => {
+        const path = ringSvg(ring).replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+        const turn = t === null
+            ? `<animateTransform attributeName="transform" type="rotate" from="${ring.from} 32 32" to="${ring.from + ring.dir * 360} 32 32" dur="${ring.dur}s" repeatCount="indefinite"/>`
             : '';
-        const at = t === null ? 0 : turn.from + turn.dir * 360 * ((t / turn.dur) % 1);
-        return `<g${t === null ? '' : ` transform="rotate(${at.toFixed(2)} 32 32)"`}>${path}${spin}</g>`;
-    };
-    return svg(
-        ring(25, {color: c.accent, w: 4.2, dur: 1.2, dir: 1, from: 0}, 150) +
-        ring(17, {color: c.glyph, w: 3.6, dur: 1.8, dir: -1, from: 90}, 150) +
-        ring(9, {color: c.accent, w: 3, dur: 2.4, dir: 1, from: 200}, 150), size);
+        const at = t === null ? 0 : ring.from + ring.dir * 360 * ((t / ring.dur) % 1);
+        return `<g${t === null ? '' : ` transform="rotate(${at.toFixed(2)} 32 32)"`}>${path}${turn}</g>`;
+    }).join(''), size);
 }

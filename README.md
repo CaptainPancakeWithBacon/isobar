@@ -54,7 +54,7 @@ The same extension on three different wallpapers. These are real screenshots fro
 </tr>
 <tr>
 <td><b>Your apps.</b> GNOME's own apps (Files, Settings, Calculator, Text Editor and the rest of the libadwaita family) get the wallpaper's colours and Isobar's shape language: soft radii, flat headers, round controls, thin sliders. Light and dark switch live, even in windows that are already open.</td>
-<td><b>Overview and dock.</b> The overview, search and the dock sit on the same card colour. The dock is a floating pill on the left that is always there.</td>
+<td><b>Overview and dock.</b> The overview, search and the dock sit on the same card colour. The dock fills the left side, top to bottom, and is always there.</td>
 </tr>
 </table>
 
@@ -117,22 +117,24 @@ Isobar carries the dock's behaviour and style with it, so the dock looks and act
 | Setting | Isobar's value | Effect |
 | --- | --- | --- |
 | `dock-position` | `LEFT` | Dock at the left edge |
-| `dock-fixed`, `extend-height` | on, off | Always there and windows stop at its edge, as a floating pill rather than a full-height panel |
+| `dock-fixed`, `extend-height` | on, on | Always there, windows stop at its edge, and it runs from the bar to the bottom of the screen |
 | `autohide`, `intellihide` | off, off | Never hides |
 | `intellihide-mode` | `ALL_WINDOWS` | Any window triggers hiding |
 | `hide-delay`, `show-delay`, `animation-time` | 0.2, 0.25, 0.2 s | Calm timing |
 | `dash-max-icon-size` | 44 | Icon size |
-| `background-opacity`, `transparency-mode` | 1.0, `FIXED` | Solid: the card colour comes from the wallpaper |
+| `background-opacity`, `transparency-mode` | the bar's, `FIXED` | The card is as see-through as the bar: its veil, or 55% when the bar has none. The colour is the bar's colourway, from the wallpaper |
 | `multi-monitor`, `preferred-monitor` | off, `-2` | One dock only, on the screen named by `preferred-monitor-by-connector` |
 | `preferred-monitor-by-connector` | the left-most screen | Isobar picks it and picks again when you plug a screen in or out |
 | `show-apps-at-top`, `show-mounts`, `show-trash` | off, off, on | Layout |
+
+The dot under a running app, the highlight when you point at an icon and the tint of the focused app all use Isobar's accent, like the bar's hover.
 
 Before it changes a setting, Isobar saves the old value to `~/.cache/isobar/dock-previous.json`. Disabling Isobar puts every one back. The oldest value always wins, so applying twice never overwrites what you had.
 
 **Make it yours.** Put overrides in `~/.config/isobar/dock.json`. Unknown keys and values of the wrong type are ignored.
 
 ```jsonc
-{ "dock-position": "BOTTOM", "autohide": true, "intellihide": true, "dock-fixed": false, "dash-max-icon-size": 56 }
+{ "dock-position": "BOTTOM", "autohide": true, "intellihide": true, "dock-fixed": false, "extend-height": false, "background-opacity": 1.0 }
 ```
 
 To leave the dock completely alone: `{ "manage": false }`.

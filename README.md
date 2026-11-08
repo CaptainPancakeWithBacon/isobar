@@ -61,7 +61,8 @@ The same extension on three different wallpapers. These are real screenshots fro
 **Small things that follow too**
 
 - **Light or dark, automatically.** When the wallpaper changes, GNOME's light/dark preference follows its brightness, so GTK and libadwaita apps flip with it.
-- **Icons and pointer.** If you use Papirus, it swaps between Papirus-Light and Papirus-Dark. The pointer goes DMZ-Black on light and DMZ-White on dark. Any other icon or cursor theme is left alone.
+- **Round icons and a loading wheel.** Isobar writes an icon theme from the wallpaper's colours: round plates with a few contour lines, original icons for GNOME's own apps (Files, Terminal, Settings, Calculator, Text Editor, Calendar, Image Viewer, Music, Videos, Software, Disks, Help, Trash), and every other app's own icon on the same plate. Your icon theme stays the parent, so everything else still shows, and it comes back when you switch Isobar off. The shell's loading wheel becomes the logo's three half-rings, turning at their own pace. See [Icons](#icons).
+- **Pointer.** The pointer goes DMZ-Black on light and DMZ-White on dark. Any other cursor theme is left alone.
 - **No grey flash.** GNOME paints a stock grey while it starts. On Ubuntu that colour is a setting, so Isobar keeps it at your wallpaper's average and the desktop fades in from a matching tone.
 - **The dock comes along.** Position, hiding, icon size and opacity are part of Isobar. See [The dock](#the-dock).
 - **Login screen.** An optional theme built from Ubuntu's own: your wallpaper darkened and blurred, no Ubuntu logo, a soft name card. See [Login screen](#login-screen).
@@ -101,14 +102,28 @@ Everything Isobar writes, in one place. Nothing else is touched.
 | Where | What Isobar does |
 | --- | --- |
 | GNOME Shell | Hides Activities and the date menu, adds the clock, dots and app name to the bar, pins the bar to 28 px, loads one stylesheet. |
-| `org.gnome.desktop.interface` | `color-scheme` follows the wallpaper's brightness when the wallpaper changes. `icon-theme` and `cursor-theme` swap only if you already use Papirus or DMZ. |
+| `org.gnome.desktop.interface` | `color-scheme` follows the wallpaper's brightness when the wallpaper changes. `icon-theme` is set to Isobar's theme (and put back when Isobar goes off); `cursor-theme` swaps only if you already use DMZ. |
+| `~/.local/share/icons/Isobar` and `Isobar-2` | The generated icon theme. Two folders because GTK and the shell only reload icons when the theme's name changes: each new wallpaper writes the other one. Removed when Isobar is switched off. |
 | `~/.config/gtk-4.0/` | Writes `mist.css` and adds one import line to your `gtk.css`. Disabling Isobar removes both and leaves the rest of your `gtk.css` alone. |
 | `org.gnome.shell.extensions.dash-to-dock` | The dock profile: position, hiding, icon size, opacity. Remembered and restored. |
 | `com.ubuntu.login-screen` | Ubuntu only: `background-color` is kept at the wallpaper's average. |
-| `~/.cache/isobar/` | The current accent colour (for the terminal logo) and the dock settings you had before. |
+| `~/.cache/isobar/` | The current accent colour (for the terminal logo), the dock settings and the icon theme you had before, and the loading wheel's rings. |
 | Coucou, opt-in | Only if `~/.config/mist/coucou` exists: Coucou's island colour, with one restart per change. |
 
 GNOME normally disables extensions while the screen is locked. Isobar asks to keep running (`session-modes`), so extra bars, such as the ones Multi Monitor Bar puts on other screens, keep the see-through style instead of turning solid black. On the lock screen the strip shows no clock, workspace dots or app name. The listing edition does not ask for this.
+
+## Icons
+
+With the `adaptive-icons` switch on (it is, in this edition) Isobar writes `~/.local/share/icons/Isobar` from the palette each time the wallpaper changes, and points `icon-theme` at it.
+
+- **Drawn icons** for GNOME's own apps and the bin: 13 glyphs on a round plate. The plate, the contour lines, the glyph and the accent all come from the wallpaper's palette.
+- **Plates for the rest.** For each installed app whose icon is a name (not a file path), Isobar finds its drawing in your current icon theme, hicolor or the flatpak and snap exports, and puts it on the same plate. The drawing is embedded as it is: Isobar adds a plate and nothing else, and the files are generated on your machine from your own installed icons.
+- **Behind them** sits your icon theme: Papirus follows light and dark, any other theme is inherited as it is. Anything without a plate keeps its usual icon.
+- **The loading wheel.** The shell's spinner is patched while Isobar is on: three half-rings from the logo, each at its own speed, in the accent and text colours.
+
+Turn it off with `gsettings set org.gnome.shell.extensions.isobar adaptive-icons false`. Isobar puts back the icon theme you had and the shell's own wheel, and deletes its folders.
+
+**Not covered.** An app whose launcher points at an image file (Ubuntu's snap Firefox does) bypasses icon themes, so it keeps its icon. Apps that draw their own spinner, such as libadwaita apps, keep it. Icons that are only PNG are not plated.
 
 ## The dock
 

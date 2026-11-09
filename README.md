@@ -61,7 +61,7 @@ The same extension on three different wallpapers. These are real screenshots fro
 **Small things that follow too**
 
 - **Light or dark, automatically.** When the wallpaper changes, GNOME's light/dark preference follows its brightness, so GTK and libadwaita apps flip with it.
-- **Round icons and a loading wheel.** Isobar writes an icon theme from the wallpaper's colours: round plates with a few contour lines, original icons for GNOME's own apps (Files, Terminal, Settings, Calculator, Text Editor, Calendar, Image Viewer, Music, Videos, Software, Disks, Help, Trash), and every other app's own icon on the same plate. Your icon theme stays the parent, so everything else still shows, and it comes back when you switch Isobar off. The shell's loading wheel becomes the logo's three half-rings, turning at their own pace. See [Icons](#icons).
+- **Round icons and a loading wheel.** Isobar writes an icon theme from the wallpaper's colours: round plates with a few contour lines, original icons for GNOME's own apps (Files, Terminal, Settings, Calculator, Text Editor, Calendar, Image Viewer, Music, Videos, Software, Disks, Help, Trash), and a drawn icon for every other app: a glyph for what it does (browser, mail, chat, code, office, games, security and about 40 more) with its initial in the corner, or just its initials when there is no glyph. All of it is drawn by Isobar; nothing is copied from another icon theme. Your icon theme stays the parent, so everything else still shows, and it comes back when you switch Isobar off. The shell's loading wheel becomes the logo's three half-rings, turning at their own pace. See [Icons](#icons).
 - **Pointer.** The pointer goes DMZ-Black on light and DMZ-White on dark. Any other cursor theme is left alone.
 - **No grey flash.** GNOME paints a stock grey while it starts. On Ubuntu that colour is a setting, so Isobar keeps it at your wallpaper's average and the desktop fades in from a matching tone.
 - **The dock comes along.** Position, hiding, icon size and opacity are part of Isobar. See [The dock](#the-dock).
@@ -117,13 +117,13 @@ GNOME normally disables extensions while the screen is locked. Isobar asks to ke
 With the `adaptive-icons` switch on (it is, in this edition) Isobar writes `~/.local/share/icons/Isobar` from the palette each time the wallpaper changes, and points `icon-theme` at it.
 
 - **Drawn icons** for GNOME's own apps and the bin: 13 glyphs on a round plate. The plate, the contour lines, the glyph and the accent all come from the wallpaper's palette.
-- **Plates for the rest.** For each installed app whose icon is a name (not a file path), Isobar finds its drawing in your current icon theme, hicolor or the flatpak and snap exports, and puts it on the same plate. The drawing is embedded as it is: Isobar adds a plate and nothing else, and the files are generated on your machine from your own installed icons.
+- **A drawn icon for every other app.** Isobar asks what each installed app is: first by its name (Firefox, Spotify, Discord, LibreOffice Writer, JetBrains and so on), then by the categories in its desktop file (WebBrowser, Email, IDE, Spreadsheet...). That picks one of about 50 glyphs, drawn on the plate with the app's initial in a small disc in the corner so two chat apps or two editors still tell apart. An app with no glyph, and every game, gets its initials, big, on the plate. The icons are generated on your machine from the palette; nothing is taken from Papirus or any other theme, so there is no third-party art in them.
 - **Behind them** sits your icon theme: Papirus follows light and dark, any other theme is inherited as it is. Anything without a plate keeps its usual icon.
 - **The loading wheel.** The shell's spinner is patched while Isobar is on: three half-rings from the logo, each at its own speed, in the accent and text colours.
 
 Turn it off with `gsettings set org.gnome.shell.extensions.isobar adaptive-icons false`. Isobar puts back the icon theme you had and the shell's own wheel, and deletes its folders.
 
-**Not covered.** An app whose launcher points at an image file (Ubuntu's snap Firefox does) bypasses icon themes, so it keeps its icon. Apps that draw their own spinner, such as libadwaita apps, keep it. Icons that are only PNG are not plated.
+**Not covered.** An app whose launcher points at an image file instead of an icon name (Ubuntu's snap Firefox, VS Code, Discord, Postman and a few others do) bypasses every icon theme, so it keeps its own icon. Apps that draw their own spinner, such as libadwaita apps, keep it.
 
 ## The dock
 

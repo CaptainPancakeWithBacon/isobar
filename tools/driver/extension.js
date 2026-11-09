@@ -116,8 +116,8 @@ export default class MistDriver extends Extension {
             const plates = [];
             const en = Gio.File.new_for_path(`${tdir}/scalable/apps`).enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
             for (let i = en.next_file(null); i; i = en.next_file(null)) plates.push(i.get_name());
-            check('other apps got a plate too', plates.length > 13, `${plates.length} icons in apps/`);
-            check('the plates are the apps\' own drawing inside Isobar\'s round plate', plates.some(n => { const t = new TextDecoder().decode(GLib.file_get_contents(`${tdir}/scalable/apps/${n}`)[1]); return t.includes('<circle cx="32" cy="32" r="30"') && t.includes('<svg x="13" y="13"'); }));
+            check('other apps got icons of their own', plates.length > 13, `${plates.length} icons in apps/`);
+            check('every one is Isobar\'s own drawing on the round plate, nothing borrowed', plates.every(n => { const t = new TextDecoder().decode(GLib.file_get_contents(`${tdir}/scalable/apps/${n}`)[1]); return t.includes('<circle cx="32" cy="32" r="30"') && !t.includes('<image') && !t.includes('<svg x="13"'); }));
             // the loading wheel: a real shell Spinner shows the logo's three half-rings, turning, and lets go of them when it stops
             const wheel = new Spinner(96, {animate: false});
             Main.uiGroup.add_child(wheel);

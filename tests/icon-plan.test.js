@@ -1,7 +1,7 @@
 import {test, eq, done} from './harness.js';
 import {paletteFrom} from '../extension/lib/palette.js';
 import {CORE} from '../extension/lib/icons.js';
-import {baseTheme, coreFiles, indexTheme, plateNames, themeKey} from '../extension/lib/icon-plan.js';
+import {baseTheme, coreFiles, indexTheme, themeKey} from '../extension/lib/icon-plan.js';
 
 const px = (r, g, b) => Array.from({length: 20}, () => [r, g, b]);
 const pal = paletteFrom(px(230, 235, 240));
@@ -26,20 +26,12 @@ test('the drawn icons go to the right folder: the bin among places, the rest amo
     eq(new Set(files.map(f => `${f.dir}/${f.name}`)).size, files.length);
 });
 
-test('apps that get a plate: the first themed name of each, not symbolic, not already drawn, once each, in order', () => {
-    const apps = [['firefox', 'web-browser'], ['org.gnome.Nautilus'], ['discord'], ['firefox'], ['gedit-symbolic'], [], ['org.gnome.Calculator', 'x'], ['spotify-client']];
-    eq(plateNames(apps), ['discord', 'firefox', 'spotify-client']);
-});
-
-test('a path or a name with slashes is never a plate name, so nothing is written outside the theme', () => {
-    eq(plateNames([['/usr/share/pixmaps/foo.png'], ['../evil'], ['a/b'], ['fine']]), ['fine']);
-});
-
 test('the key changes with colours, parent theme and the set of apps, and with nothing else', () => {
     const c = (p, i, n) => themeKey(p, i, n);
-    const base = c(pal, 'Papirus-Light', ['a', 'b']);
-    eq(base === c(pal, 'Papirus-Light', ['a', 'b']), true);
-    eq([base === c(paletteFrom(px(20, 28, 44)), 'Papirus-Light', ['a', 'b']), base === c(pal, 'Papirus-Dark', ['a', 'b']), base === c(pal, 'Papirus-Light', ['a'])], [false, false, false]);
+    const plan = [{icon: 'a', glyph: 'chat', letters: 'A'}, {icon: 'b', glyph: null, letters: 'B'}];
+    const base = c(pal, 'Papirus-Light', plan);
+    eq(base === c(pal, 'Papirus-Light', JSON.parse(JSON.stringify(plan))), true);
+    eq([base === c(paletteFrom(px(20, 28, 44)), 'Papirus-Light', plan), base === c(pal, 'Papirus-Dark', plan), base === c(pal, 'Papirus-Light', plan.slice(0, 1)), base === c(pal, 'Papirus-Light', [{...plan[0], glyph: 'mail'}, plan[1]])], [false, false, false, false]);
 });
 
 done();

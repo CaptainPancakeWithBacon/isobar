@@ -5,7 +5,7 @@ import json, re, shutil, subprocess, sys, tempfile, pathlib
 
 UUID = 'isobar@captainpancakewithbacon.github.io'
 OFF_BY_DEFAULT = ['follow-scheme', 'swap-icons', 'swap-cursor', 'startup-colour', 'terminal-accent', 'adaptive-icons']   # the last one does nothing in this edition
-LEFT_OUT = ['lib/dock.js', 'lib/dock-plan.js', 'lib/coucou.js', 'lib/coucou-settings.js', 'lib/extra-bars.js', 'lib/icon-theme.js', 'lib/icon-plan.js', 'lib/icons.js', 'lib/spinner.js']
+LEFT_OUT = ['lib/dock.js', 'lib/dock-plan.js', 'lib/coucou.js', 'lib/coucou-settings.js', 'lib/extra-bars.js', 'lib/icon-theme.js', 'lib/icon-plan.js', 'lib/icons.js', 'lib/app-glyphs.js', 'lib/spinner.js']
 DESCRIPTION = (
     "Isobar takes its colours from your wallpaper: a soft see-through top bar with the time, workspace dots and the app in front, "
     "a big clock on the desktop, and shell menus and cards that go light or dark with the picture. It can also colour GNOME apps "
@@ -50,7 +50,7 @@ with tempfile.TemporaryDirectory() as tmp:
     (build / 'metadata.json').write_text(json.dumps(meta, indent=2) + '\n')
 
     # nothing may still refer to a part that was left out (CSS selectors that style the dock's look are fine)
-    leftovers = [f'{p.relative_to(build)}: {m}' for p in build.rglob('*.js') for m in re.findall(r"lib/dock|lib/coucou|lib/extra|lib/icon|lib/spinner|CoucouSync|ExtraBars|IconTheme|IsobarSpinner|new Dock|dash-to-dock|@full", p.read_text())]
+    leftovers = [f'{p.relative_to(build)}: {m}' for p in build.rglob('*.js') for m in re.findall(r"lib/dock|lib/coucou|lib/extra|lib/icon|lib/app-glyphs|lib/spinner|CoucouSync|ExtraBars|IconTheme|IsobarSpinner|new Dock|dash-to-dock|@full", p.read_text())]
     if leftovers:
         sys.exit('left-out parts still referenced:\n  ' + '\n  '.join(sorted(set(leftovers))))
     for p in build.rglob('*.js'):

@@ -1,6 +1,6 @@
 import {test, eq, done} from './harness.js';
 import {paletteFrom} from '../extension/lib/palette.js';
-import {CORE, GLYPHS, coreIcon, iconColours, plated, ringSvg, spinner, spinnerRings} from '../extension/lib/icons.js';
+import {CORE, GLYPHS, appIcon, coreIcon, iconColours, ringSvg, spinner, spinnerRings} from '../extension/lib/icons.js';
 
 const px = (r, g, b) => Array.from({length: 20}, () => [r, g, b]);
 // Checks the two ways a hand-built SVG goes wrong: a tag that repeats an attribute (which makes the whole icon fail to load) and tags that do not balance
@@ -29,7 +29,7 @@ test('the checker itself catches a repeated attribute and an unclosed tag', () =
     eq([wellFormed('<a b="1" b="2"/>'), wellFormed('<a><b></a>'), wellFormed('<a><b/></a>')], ['<a> repeats b', 'unbalanced </a>', true]);
 });
 
-test('every glyph is well-formed SVG on every kind of wallpaper', () => {
+test('every glyph, core and kind-of-app, is well-formed SVG on every kind of wallpaper', () => {
     for (const p of palettes)
         for (const name of Object.keys(GLYPHS))
             eq([name, wellFormed(coreIcon(name, iconColours(p)))], [name, true]);
@@ -48,14 +48,25 @@ test('the wheel has three rings at three different speeds, and each ring is an S
     eq(rings.every(r => wellFormed(ringSvg(r)) === true && ringSvg(r).includes(`stroke="${r.color}"`)), true);
 });
 
-test('another app\'s own icon goes on the plate, scaled into the middle', () => {
-    const inner = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><rect width="48" height="48" fill="#f00"/></svg>';
-    const out = plated(iconColours(palettes[0]), inner);
-    eq([wellFormed(out), out.includes('viewBox="0 0 48 48"'), out.includes('fill="#f00"')], [true, true, true]);
+test('an app icon is the glyph for what it does with its initial in the corner, well-formed and escaped', () => {
+    const c = iconColours(palettes[0]);
+    for (const key of Object.keys(GLYPHS)) {
+        const out = appIcon(c, key, 'Qz');
+        eq([key, wellFormed(out), out.includes('>Q</text>')], [key, true, true]);
+    }
+    const odd = appIcon(c, null, 'A&<');
+    eq([wellFormed(odd), odd.includes('A&amp;&lt;'), odd.includes('r="30"')], [true, true, true]);
+    eq(wellFormed(appIcon(c, 'no-such-glyph', 'Zed')), true);
 });
 
-test('every glyph has icon names to stand in for, and every name belongs to one glyph', () => {
-    eq(Object.keys(CORE).sort(), Object.keys(GLYPHS).sort());
+test('an app with no glyph shows its initials big, one letter bigger than two', () => {
+    const c = iconColours(palettes[0]);
+    const one = appIcon(c, null, 'C'), two = appIcon(c, null, 'HI');
+    eq([/font-size="25"/.test(one), /font-size="19"/.test(two)], [true, true]);
+});
+
+test('every drawn core app has a glyph, and every icon name belongs to one glyph', () => {
+    eq(Object.keys(CORE).every(key => key in GLYPHS), true);
     const names = Object.values(CORE).flat();
     eq(new Set(names).size, names.length);
 });

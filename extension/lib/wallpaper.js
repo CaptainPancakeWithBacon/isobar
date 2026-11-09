@@ -12,11 +12,11 @@ export function wallpaperFile(bg, iface) {
     return uri ? Gio.File.new_for_uri(uri) : null;
 }
 
-/** {pixels, top, clock}: the whole picture, its top band and the patch under the clock, or one flat colour when there is no readable picture. */
+/** {pixels, top, clock, edge}: the whole picture, its top band, the patch under the clock and the strip at the left edge (where the dock sits), or one flat colour when there is no readable picture. */
 export function sample(bg, iface) {
     const flat = hex => {
         const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-        return {pixels: [c], top: [c], clock: [c]};
+        return {pixels: [c], top: [c], clock: [c], edge: [c]};
     };
     const file = bg.get_string('picture-options') === 'none' ? null : wallpaperFile(bg, iface);
     const path = file?.get_path();
@@ -26,7 +26,7 @@ export function sample(bg, iface) {
         // Decoding a 4K PNG takes ~250 ms on the shell's main thread, enough to stutter. The result is kept per
         // picture (path, size, change time), so only a new wallpaper pays; every login and restyle after that reads it back.
         const info = file.query_info('standard::size,time::modified', Gio.FileQueryInfoFlags.NONE, null);
-        const key = `${path}|${info.get_size()}|${info.get_attribute_uint64('time::modified')}`;
+        const key = `${path}|${info.get_size()}|${info.get_attribute_uint64('time::modified')}|v2`;   // v2: the memo also holds the left edge
         const memo = Gio.File.new_for_path(`${GLib.get_user_cache_dir()}/mist/sample.json`);
         try {
             const saved = JSON.parse(new TextDecoder().decode(memo.load_contents(null)[1]));
@@ -38,7 +38,7 @@ export function sample(bg, iface) {
         // a stretched copy of the picture; fine for averages
         const pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, W, H, false);
         const px = pb.get_pixels(), n = pb.get_n_channels(), stride = pb.get_rowstride();
-        const pixels = [], top = [], clock = [];
+        const pixels = [], top = [], clock = [], edge = [];
         for (let y = 0; y < pb.get_height(); y++) {
             for (let x = 0; x < pb.get_width(); x++) {
                 const i = y * stride + x * n;
@@ -46,12 +46,15 @@ export function sample(bg, iface) {
                 pixels.push(c);
                 if (y < Math.max(2, Math.round(pb.get_height() * 0.1)))
                     top.push(c);
+                // where the dock sits: the left edge, below the bar
+                if (y >= pb.get_height() * 0.03 && x < Math.max(2, Math.round(pb.get_width() * 0.08)))
+                    edge.push(c);
                 // where the big clock sits: top left, below the bar
                 if (y >= pb.get_height() * 0.03 && y < pb.get_height() * 0.24 && x >= pb.get_width() * 0.03 && x < pb.get_width() * 0.28)
                     clock.push(c);
             }
         }
-        const result = {pixels, top, clock: clock.length ? clock : top};
+        const result = {pixels, top, clock: clock.length ? clock : top, edge: edge.length ? edge : top};
         GLib.mkdir_with_parents(memo.get_parent().get_path(), 0o755);
         memo.replace_contents(new TextEncoder().encode(JSON.stringify({key, sample: result})), null, false, Gio.FileCreateFlags.NONE, null);
         return result;

@@ -74,21 +74,30 @@ test('the big clock reads on its own patch of wallpaper, whatever the top edge l
     eq(luminance(q.clock.text) < 0.1, true);
 });
 
-test('the dock wears the bar\'s colours: the same tone of card, whatever the rest of the picture looks like', () => {
+test('the dock reads the wallpaper at the left edge, where it sits: a dark card on dark hills under a pale sky, and the other way round', () => {
     const sky = flat(235, 240, 245), hills = flat(25, 40, 30);
-    const underSky = paletteFrom([...sky, ...hills], sky);
-    eq([luminance(underSky.bar.text) < 0.1, luminance(underSky.dock.card) > 0.8, luminance(underSky.dock.text) < 0.1], [true, true, true]);
-    eq(underSky.dock.card, underSky.bar.veilColor);
-    eq(underSky.dock.text, underSky.bar.text);
-    const underHills = paletteFrom([...sky, ...hills], hills);
-    eq([luminance(underHills.bar.text) > 0.7, luminance(underHills.dock.card) < 0.1, luminance(underHills.dock.text) > 0.7], [true, true, true]);
+    const onHills = paletteFrom([...sky, ...hills], sky, sky, null, hills);
+    eq([luminance(onHills.bar.text) < 0.1, luminance(onHills.dock.card) < 0.1, luminance(onHills.dock.text) > 0.7], [true, true, true]);
+    const onSky = paletteFrom([...sky, ...hills], hills, hills, null, sky);
+    eq([luminance(onSky.bar.text) > 0.7, luminance(onSky.dock.card) > 0.8, luminance(onSky.dock.text) < 0.1], [true, true, true]);
 });
 
-test('the dock text reads on the dock card, on any wallpaper', () => {
+test('the dock text reads on the dock card, whatever the edge looks like', () => {
     for (const c of [[235, 240, 245], [25, 40, 30], [128, 128, 128], [200, 60, 40]]) {
-        const p = paletteFrom(flat(...c));
+        const p = paletteFrom(flat(...c), flat(...c), flat(...c), null, flat(...c));
         eq([JSON.stringify(c), contrast(p.dock.text, p.dock.card) >= 7], [JSON.stringify(c), true]);
     }
+});
+
+test('with no edge given the dock follows the top band', () => {
+    const sky = flat(235, 240, 245), hills = flat(25, 40, 30);
+    eq(paletteFrom([...sky, ...hills], sky).dock, paletteFrom([...sky, ...hills], sky, sky, null, sky).dock);
+    eq(paletteFrom([...sky, ...hills], sky).dock.card, paletteFrom([...sky, ...hills], sky).bar.veilColor);
+});
+
+test('the dock keeps the bar\'s opacity, whatever its own colour is', () => {
+    const sky = flat(235, 240, 245), hills = flat(25, 40, 30);
+    eq(paletteFrom([...sky, ...hills], sky, sky, null, hills).bar.veil, VEIL);
 });
 
 test('the average is the wallpaper\'s mean colour', () => {

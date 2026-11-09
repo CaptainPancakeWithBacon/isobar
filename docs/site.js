@@ -19,14 +19,15 @@ function sample(img) {
   const ctx = c.getContext('2d', {willReadFrequently: true});
   ctx.drawImage(img, 0, 0, W, H);
   const d = ctx.getImageData(0, 0, W, H).data;
-  const pixels = [], top = [], clock = [];
+  const pixels = [], top = [], clock = [], edge = [];
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = (y * W + x) * 4, p = [d[i], d[i + 1], d[i + 2]];
     pixels.push(p);
     if (y < Math.max(2, Math.round(H * 0.1))) top.push(p);
+    if (y >= H * 0.03 && x < Math.max(2, Math.round(W * 0.08))) edge.push(p);   // where the dock sits
     if (y >= H * 0.03 && y < H * 0.24 && x >= W * 0.03 && x < W * 0.28) clock.push(p);
   }
-  return paletteFrom(pixels, top, clock.length ? clock : top);
+  return paletteFrom(pixels, top, clock.length ? clock : top, null, edge.length ? edge : top);
 }
 
 const alpha = (hex, a) => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)); return `rgba(${r},${g},${b},${a})`; };

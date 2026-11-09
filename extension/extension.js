@@ -132,8 +132,8 @@ export default class Isobar extends Extension {
     }
 
     _restyle(followWallpaper) {
-        const {pixels, top, clock} = sample(this._bg, this._iface);
-        this._palette = paletteFrom(pixels, top, clock);
+        const {pixels, top, clock, edge} = sample(this._bg, this._iface);
+        this._palette = paletteFrom(pixels, top, clock, null, edge);
         const on = key => this._settings.get_boolean(key);
 
         if (followWallpaper && on('follow-scheme')) {
@@ -155,7 +155,7 @@ export default class Isobar extends Extension {
         this._shareAccent(on('terminal-accent'));
         // libadwaita apps get both palettes, whatever mode the wallpaper is in: GTK picks the one that applies, live
         if (on('style-apps'))
-            applyGtk(gtkCss(paletteFrom(pixels, top, clock, 'light'), paletteFrom(pixels, top, clock, 'dark')));
+            applyGtk(gtkCss(paletteFrom(pixels, top, clock, 'light', edge), paletteFrom(pixels, top, clock, 'dark', edge)));
         else
             removeGtk();
         // the colour the shell paints while it starts, before the wallpaper is ready: the wallpaper's own average, not stock grey

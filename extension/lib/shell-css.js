@@ -234,8 +234,8 @@ stage {
     background-color: ${p.track};
 }
 
-/* the Ubuntu Dock wears the bar's colours (p.dock): the same card tone, and the same opacity (Dock.setOpacity). The dock takes this
-   colour and applies its own opacity setting to it */
+/* the Ubuntu Dock reads the wallpaper at the left edge, where it sits (p.dock): a card in the tone of the picture behind it, at the
+   bar's opacity (Dock.setOpacity). The dock takes this colour and applies its own opacity setting to it */
 #dashtodockContainer #dash .dash-background {
     background-color: ${p.dock.card};
 }

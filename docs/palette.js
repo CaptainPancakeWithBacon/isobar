@@ -59,9 +59,9 @@ export const DARK_BELOW = 0.2;   // WCAG luminance of the wallpaper's average; m
 /**
  * pixels: the whole wallpaper, downscaled, as [r, g, b] 0-255. top: the band under the bar.
  * Returns the palette: surface roles (ink, paper, track, hover, muted) for cards and menus,
- * and the colours for the bar itself, which sits straight on the wallpaper.
+ * and the colours for the bar itself, which sits straight on the wallpaper. edge: the strip of wallpaper at the left edge, where the dock sits.
  */
-export function paletteFrom(pixels, top = pixels, clock = top, mode = null) {
+export function paletteFrom(pixels, top = pixels, clock = top, mode = null, edge = top) {
     const avg = mean(pixels);
     const hue = dominantHue(pixels) ?? toHsl(avg)[0];
     const chroma = clamp(toHsl(avg)[1], 0.06, 0.26);
@@ -98,6 +98,12 @@ export function paletteFrom(pixels, top = pixels, clock = top, mode = null) {
     const veil = VEIL;
     const veilColor = useDark ? tint(0.7, 0.965) : tint(0.9, 0.14);   // a card in the tone of the band: light under dark text, dark under light text
 
+    // the dock reads the wallpaper where it sits, the way the bar reads its own strip: a card in the tone of the picture behind it (so it
+    // belongs to the picture instead of flashing against it), with text and icons that read on it. Its opacity is still the bar's veil.
+    const edgeBand = hexOf(mean(edge));
+    const edgeDark = contrast(darkText, edgeBand) >= contrast(lightText, edgeBand);
+    const dock = {text: edgeDark ? darkText : lightText, card: edgeDark ? tint(0.7, 0.965) : tint(0.9, 0.14)};
+
     // the big clock sits on its own patch of wallpaper, which is rarely what the top edge looks like.
     // It gets a soft shadow in the opposite tone: a painting is never one flat colour.
     const patch = hexOf(mean(clock));
@@ -113,8 +119,7 @@ export function paletteFrom(pixels, top = pixels, clock = top, mode = null) {
         // the same shape the shell template wants for the rest
         ground: band, minor: surface.hover, major: surface.muted, dot: barText.muted,
         bar: {...barText, veil, veilColor},
-        // the dock wears the bar's colours, so the two always match: one scheme, read from the wallpaper's strip under the bar
-        dock: {text: barText.text, card: veilColor},
+        dock,
         clock: clockText,
     };
 }

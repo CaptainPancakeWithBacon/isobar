@@ -14,15 +14,16 @@ test('Papirus follows light and dark; any other theme is inherited as it is; Iso
 
 test('the theme file names its parent and its two scalable folders', () => {
     const t = indexTheme('Isobar', 'Papirus-Dark');
-    eq([t.includes('Name=Isobar'), t.includes('Inherits=Papirus-Dark'), t.includes('Directories=scalable/apps,scalable/places')], [true, true, true]);
-    eq([/\[scalable\/apps\][^[]*Context=Applications/.test(t), /\[scalable\/places\][^[]*Context=Places/.test(t), t.includes('Type=Scalable')], [true, true, true]);
+    eq([t.includes('Name=Isobar'), t.includes('Inherits=Papirus-Dark'), t.includes('Directories=scalable/apps,scalable/places,scalable/status')], [true, true, true]);
+    eq([/\[scalable\/apps\][^[]*Context=Applications/.test(t), /\[scalable\/places\][^[]*Context=Places/.test(t), /\[scalable\/status\][^[]*Context=Status/.test(t), t.includes('Type=Scalable')], [true, true, true, true]);
 });
 
 test('the drawn icons go to the right folder: the bin among places, the rest among apps', () => {
     const files = coreFiles(pal);
     eq(files.every(f => f.svg.startsWith('<svg')), true);
     eq(files.filter(f => f.dir === 'places').map(f => f.name).sort(), ['user-trash', 'user-trash-full']);
-    eq(files.length, Object.values(CORE).flat().length);
+    eq(files.filter(f => f.dir === 'status').map(f => f.name), ['process-working-symbolic']);
+    eq(files.length, Object.values(CORE).flat().length + 1);   // and the symbolic loading wheel
     eq(new Set(files.map(f => `${f.dir}/${f.name}`)).size, files.length);
 });
 

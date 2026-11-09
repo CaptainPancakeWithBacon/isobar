@@ -68,7 +68,7 @@ export class IconTheme {
         const target = active === NAMES[0] ? NAMES[1] : NAMES[0];
         const dir = `${this._root}/${target}`;
         removeTree(dir);
-        for (const sub of ['apps', 'places'])
+        for (const sub of ['apps', 'places', 'status'])
             GLib.mkdir_with_parents(`${dir}/scalable/${sub}`, 0o755);
         GLib.file_set_contents(`${dir}/index.theme`, indexTheme(target, inherits));
         for (const f of coreFiles(p))

@@ -1,6 +1,6 @@
 // The pure part of Isobar's icon theme: what the theme inherits, what its index says and which icons are drawn (the apps': app-glyphs.js).
 // The file writing is in icon-theme.js. Tested under gjs.
-import {CORE, coreIcon, iconColours} from './icons.js';
+import {CORE, coreIcon, iconColours, spinnerSymbolic} from './icons.js';
 
 const PLACES = new Set(['user-trash', 'user-trash-full']);
 
@@ -15,7 +15,7 @@ export const indexTheme = (name, inherits) => `[Icon Theme]
 Name=${name}
 Comment=Isobar icons, drawn from your wallpaper
 Inherits=${inherits}
-Directories=scalable/apps,scalable/places
+Directories=scalable/apps,scalable/places,scalable/status
 
 [scalable/apps]
 Size=64
@@ -30,12 +30,22 @@ MinSize=8
 MaxSize=512
 Type=Scalable
 Context=Places
+
+[scalable/status]
+Size=64
+MinSize=8
+MaxSize=512
+Type=Scalable
+Context=Status
 `;
 
-/** The drawn icons as files: [{name, dir, svg}]. */
+/** The drawn icons as files: [{name, dir, svg}], and the symbolic loading wheel that Gtk.Spinner draws. */
 export function coreFiles(p) {
     const c = iconColours(p);
-    return Object.entries(CORE).flatMap(([glyph, names]) => names.map(name => ({name, dir: PLACES.has(name) ? 'places' : 'apps', svg: coreIcon(glyph, c)})));
+    return [
+        ...Object.entries(CORE).flatMap(([glyph, names]) => names.map(name => ({name, dir: PLACES.has(name) ? 'places' : 'apps', svg: coreIcon(glyph, c)}))),
+        {name: 'process-working-symbolic', dir: 'status', svg: spinnerSymbolic()},
+    ];
 }
 
 const hash = text => {

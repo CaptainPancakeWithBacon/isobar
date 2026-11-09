@@ -144,3 +144,23 @@ export function spinner(c, size = 64, t = null) {
         return `<g${t === null ? '' : ` transform="rotate(${at.toFixed(2)} 32 32)"`}>${path}${turn}</g>`;
     }).join(''), size);
 }
+
+/** A half-ring as one filled shape (a band with round ends). GTK recolours a symbolic icon by its fill, and leaves strokes alone, so the
+ * symbolic wheel cannot use the stroked arcs above. */
+function band(ring, sweep = 150) {
+    const ro = ring.r + ring.w / 2, ri = ring.r - ring.w / 2, cap = ring.w / 2;
+    const at = (radius, deg) => {
+        const a = (deg * Math.PI) / 180;
+        return `${(32 + radius * Math.cos(a)).toFixed(2)} ${(32 + radius * Math.sin(a)).toFixed(2)}`;
+    };
+    const a0 = ring.from, a1 = ring.from + sweep;
+    return `M${at(ro, a0)}A${ro} ${ro} 0 0 1 ${at(ro, a1)}A${cap} ${cap} 0 0 1 ${at(ri, a1)}A${ri} ${ri} 0 0 0 ${at(ri, a0)}A${cap} ${cap} 0 0 1 ${at(ro, a0)}Z`;
+}
+
+/** The loading wheel as a symbolic icon (GTK's Gtk.Spinner draws `process-working-symbolic` and turns it): the same three half-rings in one
+ * colour, which the app's foreground replaces. The inner rings are fainter. */
+export function spinnerSymbolic() {
+    const rings = spinnerRings({accent: '#000', glyph: '#000'});
+    const paths = rings.map((ring, i) => `<path d="${band(ring)}" fill="#bebebe"${i ? ` fill-opacity="${i === 1 ? '.75' : '.5'}"` : ''}/>`).join('');
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 64 64">${paths}</svg>\n`;
+}

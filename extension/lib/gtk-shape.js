@@ -230,6 +230,13 @@ scale slider {
     border: none;
 }
 
+/* every loading wheel wears the accent: Gtk.Spinner draws Isobar's icon in this colour, and libadwaita's own (an image with the class
+   .spinner, whose shape is fixed) follows it too */
+spinner,
+image.spinner {
+    color: @accent_color;
+}
+
 progressbar trough,
 levelbar trough {
     min-height: 6px;

@@ -6,6 +6,12 @@ const flat = (r, g, b) => Array.from({length: 20}, () => [r, g, b]);
 const NAMES = ['accent_color', 'accent_bg_color', 'accent_fg_color', 'window_bg_color', 'window_fg_color', 'view_bg_color', 'view_fg_color',
     'headerbar_bg_color', 'headerbar_fg_color', 'sidebar_bg_color', 'card_bg_color', 'dialog_bg_color', 'popover_bg_color'];
 
+test('both kinds of loading wheel wear the accent: Gtk.Spinner (spinner) and libadwaita\'s (an image with the class .spinner)', () => {
+    const c = flat(220, 226, 230);
+    const css = gtkCss(paletteFrom(c, c, c, 'light'), paletteFrom(c, c, c, 'dark'));
+    eq(/spinner,\s*image\.spinner\s*\{\s*color:\s*@accent_color;/.test(css), true);
+});
+
 test('every colour libadwaita needs for a window is defined, for light and dark', () => {
     for (const c of [flat(220, 226, 230), flat(20, 28, 40)]) {
         const css = gtkCss(paletteFrom(c, c, c, 'light'), paletteFrom(c, c, c, 'dark'));

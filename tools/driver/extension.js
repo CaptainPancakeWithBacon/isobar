@@ -135,6 +135,16 @@ export default class MistDriver extends Extension {
             await sleep(1000);
             check('the rings are gone once it stops', wheel.get_n_children() === 0, `${wheel.get_n_children()} children left`);
             wheel.destroy();
+            // an icon with broken XML is silently dropped by GTK (an app shows no icon at all): every file must parse
+            if (GLib.find_program_in_path('xmllint')) {
+                const files = [];
+                for (const sub of ['apps', 'places']) {
+                    const en2 = Gio.File.new_for_path(`${tdir}/scalable/${sub}`).enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
+                    for (let i = en2.next_file(null); i; i = en2.next_file(null)) files.push(`${tdir}/scalable/${sub}/${i.get_name()}`);
+                }
+                const [, , err, status] = GLib.spawn_sync(null, ['xmllint', '--noout', ...files], null, GLib.SpawnFlags.SEARCH_PATH, null);
+                check('every icon file is valid XML, so no app is left without an icon', status === 0, status === 0 ? `${files.length} files` : new TextDecoder().decode(err).slice(0, 160));
+            }
             check('the icon theme from before is remembered', new TextDecoder().decode(GLib.file_get_contents(`${GLib.get_user_cache_dir()}/isobar/icons-previous`)[1]).startsWith('Papirus'));
         }
         // the top bar's hover state, forced: pointing at a bar button fills it with the accent and turns its icons white

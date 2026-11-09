@@ -1,6 +1,6 @@
 import {test, eq, done} from './harness.js';
 import {paletteFrom} from '../extension/lib/palette.js';
-import {CORE, GLYPHS, appIcon, coreIcon, iconColours, ringSvg, spinner, spinnerRings} from '../extension/lib/icons.js';
+import {CORE, GLYPHS, appIcon, coreIcon, iconColours, ringSvg, spinner, spinnerRings, spinnerSymbolic} from '../extension/lib/icons.js';
 
 const px = (r, g, b) => Array.from({length: 20}, () => [r, g, b]);
 // Checks the two ways a hand-built SVG goes wrong: a tag that repeats an attribute (which makes the whole icon fail to load) and tags that do not balance
@@ -46,6 +46,12 @@ test('the wheel has three rings at three different speeds, and each ring is an S
     eq(rings.length, 3);
     eq(new Set(rings.map(r => r.dur)).size, 3);
     eq(rings.every(r => wellFormed(ringSvg(r)) === true && ringSvg(r).includes(`stroke="${r.color}"`)), true);
+});
+
+test('the symbolic wheel is filled shapes only, because GTK recolours symbolic icons by their fill, and keeps all three rings', () => {
+    const out = spinnerSymbolic();
+    eq([wellFormed(out), /stroke/.test(out), (out.match(/<path /g) ?? []).length], [true, false, 3]);
+    eq(/fill="#bebebe"/.test(out), true);
 });
 
 test('an app icon is the glyph for what it does with its initial in the corner, well-formed and escaped', () => {

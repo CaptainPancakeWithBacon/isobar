@@ -143,9 +143,9 @@ export default class Isobar extends Extension {
         }
         this._syncIcons();
         // @full:start
-        // Isobar's icons: drawn from this palette; the theme in use before is put back when the switch goes off
+        // Isobar's loading wheel on top of your icon theme; the theme in use before is put back when the switch goes off
         if (on('adaptive-icons')) {
-            this._icons.apply(this._palette, this._iface.get_string('color-scheme') === 'prefer-dark');
+            this._icons.apply(this._iface.get_string('color-scheme') === 'prefer-dark');
             this._spinner.apply(this._palette);   // and the loading wheel
         } else {
             this._icons.restore();

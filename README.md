@@ -61,7 +61,7 @@ The same extension on three different wallpapers. These are real screenshots fro
 **Small things that follow too**
 
 - **Light or dark, automatically.** When the wallpaper changes, GNOME's light/dark preference follows its brightness, so GTK and libadwaita apps flip with it.
-- **Round icons and a loading wheel.** Isobar writes an icon theme from the wallpaper's colours: round plates with a few contour lines, original icons for GNOME's own apps (Files, Terminal, Settings, Calculator, Text Editor, Calendar, Image Viewer, Music, Videos, Software, Disks, Help, Trash), and a drawn icon for every other app: a glyph for what it does (browser, mail, chat, code, office, games, security and about 40 more) with its initial in the corner, or just its initials when there is no glyph. All of it is drawn by Isobar; nothing is copied from another icon theme. Your icon theme stays the parent, so everything else still shows, and it comes back when you switch Isobar off. The shell's loading wheel becomes the logo's three half-rings, turning at their own pace, and GTK's own spinner draws the same wheel. See [Icons](#icons).
+- **A loading wheel.** The shell's loading wheel becomes the logo's three half-rings, turning at their own pace, and GTK's own spinner draws the same wheel. Your app icons stay your icon theme's: Isobar adds just the wheel on top of it (Papirus follows light and dark), and puts everything back when you switch it off. See [Icons](#icons).
 - **Pointer.** The pointer goes DMZ-Black on light and DMZ-White on dark. Any other cursor theme is left alone.
 - **No grey flash.** GNOME paints a stock grey while it starts. On Ubuntu that colour is a setting, so Isobar keeps it at your wallpaper's average and the desktop fades in from a matching tone.
 - **The dock comes along.** Position, hiding, icon size and opacity are part of Isobar. See [The dock](#the-dock).
@@ -103,7 +103,7 @@ Everything Isobar writes, in one place. Nothing else is touched.
 | --- | --- |
 | GNOME Shell | Hides Activities and the date menu, adds the clock, dots and app name to the bar, pins the bar to 28 px, loads one stylesheet. |
 | `org.gnome.desktop.interface` | `color-scheme` follows the wallpaper's brightness when the wallpaper changes. `icon-theme` is set to Isobar's theme (and put back when Isobar goes off); `cursor-theme` swaps only if you already use DMZ. |
-| `~/.local/share/icons/Isobar` and `Isobar-2` | The generated icon theme. Two folders because GTK and the shell only reload icons when the theme's name changes: each new wallpaper writes the other one. Removed when Isobar is switched off. |
+| `~/.local/share/icons/Isobar` and `Isobar-2` | The generated icon theme: only the loading wheel, on top of your own theme. Two folders because GTK and the shell only reload icons when the theme name changes. |
 | `~/.config/gtk-4.0/` | Writes `mist.css` and adds one import line to your `gtk.css`. Disabling Isobar removes both and leaves the rest of your `gtk.css` alone. |
 | `org.gnome.shell.extensions.dash-to-dock` | The dock profile: position, hiding, icon size, opacity. Remembered and restored. |
 | `com.ubuntu.login-screen` | Ubuntu only: `background-color` is kept at the wallpaper's average. |
@@ -114,16 +114,15 @@ GNOME normally disables extensions while the screen is locked. Isobar asks to ke
 
 ## Icons
 
-With the `adaptive-icons` switch on (it is, in this edition) Isobar writes `~/.local/share/icons/Isobar` from the palette each time the wallpaper changes, and points `icon-theme` at it.
+With the `adaptive-icons` switch on (it is, in this edition) Isobar writes a tiny icon theme, `~/.local/share/icons/Isobar`, and points `icon-theme` at it.
 
-- **Drawn icons** for GNOME's own apps and the bin: 13 glyphs on a round plate. The plate, the contour lines, the glyph and the accent all come from the wallpaper's palette.
-- **A drawn icon for every other app.** Isobar asks what each installed app is: first by its name (Firefox, Spotify, Discord, LibreOffice Writer, JetBrains and so on), then by the categories in its desktop file (WebBrowser, Email, IDE, Spreadsheet...). That picks one of about 50 glyphs, drawn on the plate with the app's initial in a small disc in the corner so two chat apps or two editors still tell apart. An app with no glyph, and every game, gets its initials, big, on the plate. The icons are generated on your machine from the palette; nothing is taken from Papirus or any other theme, so there is no third-party art in them.
-- **Behind them** sits your icon theme: Papirus follows light and dark, any other theme is inherited as it is. Anything without a plate keeps its usual icon.
+- **Your icons stay yours.** The theme inherits the one you had: Papirus follows light and dark, any other theme is inherited as it is. Isobar draws no app icons. It tried (a round plate with a mark for every app), and the marks never looked enough like the apps; that work is kept on the `brand-icons` branch.
 - **The loading wheel.** The shell's spinner is patched while Isobar is on: three half-rings from the logo, each at its own speed, in the accent and text colours. GTK's `Gtk.Spinner` draws the icon `process-working-symbolic`, so Isobar's theme ships the same three rings there (all three turning together, in the accent). libadwaita's `Adw.Spinner` draws itself in code and its shape cannot be themed, so it keeps its ring and takes the accent colour like the others.
+- **Why two folders.** `Isobar` and `Isobar-2` alternate, because GTK and the shell only reload icons when the theme name changes. The theme is written again only when Papirus flips between light and dark.
 
 Turn it off with `gsettings set org.gnome.shell.extensions.isobar adaptive-icons false`. Isobar puts back the icon theme you had and the shell's own wheel, and deletes its folders.
 
-**Not covered.** An app whose launcher points at an image file instead of an icon name (Ubuntu's snap Firefox, VS Code, Discord, Postman and a few others do) bypasses every icon theme, so it keeps its own icon. libadwaita's own spinner (`Adw.Spinner`) keeps its shape, because it is drawn in code; it takes the accent colour.
+**Not covered.** libadwaita's own spinner (`Adw.Spinner`) keeps its shape, because it is drawn in code; it takes the accent colour.
 
 ## The dock
 

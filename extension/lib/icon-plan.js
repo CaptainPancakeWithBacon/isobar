@@ -13,7 +13,7 @@ export function baseTheme(current, dark) {
 
 export const indexTheme = (name, inherits) => `[Icon Theme]
 Name=${name}
-Comment=Isobar icons, drawn from your wallpaper
+Comment=Isobar's loading wheel, on top of your icon theme
 Inherits=${inherits}
 Directories=scalable/apps,scalable/places,scalable/status
 

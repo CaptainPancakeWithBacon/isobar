@@ -1,13 +1,13 @@
 // Writes Isobar's icon theme into ~/.local/share/icons and switches GNOME to it, and puts everything back when Isobar is switched off.
-// Every icon is drawn by Isobar: a glyph for what the app does with its initial, or its initials; nothing is copied from the icon theme in use.
-// The theme is drawn from the wallpaper's palette, so it is written again when the palette changes. It alternates between two folder names
-// (Isobar, Isobar-2): GTK and the shell only reload icons when the theme name changes, the same trick as the stylesheet's file names.
+// The theme holds one icon, the loading wheel Gtk.Spinner draws (process-working-symbolic), and inherits the theme you had (Papirus follows light
+// and dark), so every app keeps its usual icon. Isobar once drew the app icons itself; they never looked enough like the apps (the work is on the
+// brand-icons branch). It alternates between two folder names (Isobar, Isobar-2): GTK and the shell only reload icons when the theme name changes,
+// the same trick as the stylesheet's file names.
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 
-import {appIcon, iconColours} from './icons.js';
-import {appIcons} from './app-glyphs.js';
-import {baseTheme, coreFiles, indexTheme, themeKey} from './icon-plan.js';
+import {spinnerSymbolic} from './icons.js';
+import {baseTheme, indexTheme} from './icon-plan.js';
 
 const NAMES = ['Isobar', 'Isobar-2'];
 
@@ -49,20 +49,12 @@ export class IconTheme {
         return (read(this._memo) ?? '').trim();
     }
 
-    /** Write the theme for this palette and switch to it; does nothing when it is already there. `dark` is GNOME's scheme. */
-    apply(p, dark) {
+    /** Write the theme and switch to it; does nothing when it is already there. `dark` is GNOME's scheme, which decides Papirus-Light or -Dark. */
+    apply(dark) {
         const previous = this._previous();
         const inherits = baseTheme(previous, dark);
-        const apps = Gio.AppInfo.get_all().filter(a => a.should_show()).map(a => ({
-            id: a.get_id().replace(/\.desktop$/, ''),
-            name: a.get_name(),
-            names: a.get_icon() instanceof Gio.ThemedIcon ? a.get_icon().get_names() : [],
-            categories: (a.get_categories?.() ?? '').split(';').filter(Boolean),
-        }));
-        const plan = appIcons(apps);
-        const key = themeKey(p, inherits, plan);
         const active = this._iface.get_string('icon-theme');
-        if (NAMES.includes(active) && read(`${this._root}/${active}/.key`) === key)
+        if (NAMES.includes(active) && read(`${this._root}/${active}/.key`) === inherits)
             return;
 
         const target = active === NAMES[0] ? NAMES[1] : NAMES[0];
@@ -71,12 +63,8 @@ export class IconTheme {
         for (const sub of ['apps', 'places', 'status'])
             GLib.mkdir_with_parents(`${dir}/scalable/${sub}`, 0o755);
         GLib.file_set_contents(`${dir}/index.theme`, indexTheme(target, inherits));
-        for (const f of coreFiles(p))
-            GLib.file_set_contents(`${dir}/scalable/${f.dir}/${f.name}.svg`, f.svg);
-        const c = iconColours(p);
-        for (const {icon, glyph, letters} of plan)
-            GLib.file_set_contents(`${dir}/scalable/apps/${icon}.svg`, appIcon(c, glyph, letters));
-        GLib.file_set_contents(`${dir}/.key`, key);
+        GLib.file_set_contents(`${dir}/scalable/status/process-working-symbolic.svg`, spinnerSymbolic());
+        GLib.file_set_contents(`${dir}/.key`, inherits);
         this._iface.set_string('icon-theme', target);
     }
 

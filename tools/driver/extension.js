@@ -112,12 +112,9 @@ export default class MistDriver extends Extension {
             const readIdx = new TextDecoder().decode(GLib.file_get_contents(`${tdir}/index.theme`)[1]);
             check('Isobar\'s icon theme is in use', /^Isobar(-2)?$/.test(theme), theme);
             check('it names a parent theme, so every other icon still shows', /Inherits=(Papirus-(Light|Dark)|Adwaita|Yaru)/.test(readIdx), (readIdx.match(/Inherits=.*/) ?? [''])[0]);
-            check('the drawn icons are there, the bin among the places', has('scalable/apps/org.gnome.Nautilus.svg') && has('scalable/apps/org.gnome.Calculator.svg') && has('scalable/places/user-trash.svg'));
-            const plates = [];
-            const en = Gio.File.new_for_path(`${tdir}/scalable/apps`).enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
-            for (let i = en.next_file(null); i; i = en.next_file(null)) plates.push(i.get_name());
-            check('other apps got icons of their own', plates.length > 13, `${plates.length} icons in apps/`);
-            check('every one is Isobar\'s own drawing on the round plate, nothing borrowed', plates.every(n => { const t = new TextDecoder().decode(GLib.file_get_contents(`${tdir}/scalable/apps/${n}`)[1]); return t.includes('<circle cx="32" cy="32" r="30"') && !t.includes('<image') && !t.includes('<svg x="13"'); }));
+            check('the loading wheel is the one icon it carries', has('scalable/status/process-working-symbolic.svg'));
+            const apps = Gio.File.new_for_path(`${tdir}/scalable/apps`).enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
+            check('no app icon is drawn: every app keeps the icon of the theme underneath', apps.next_file(null) === null);
             // the loading wheel: a real shell Spinner shows the logo's three half-rings, turning, and lets go of them when it stops
             const wheel = new Spinner(96, {animate: false});
             Main.uiGroup.add_child(wheel);
@@ -138,12 +135,12 @@ export default class MistDriver extends Extension {
             // an icon with broken XML is silently dropped by GTK (an app shows no icon at all): every file must parse
             if (GLib.find_program_in_path('xmllint')) {
                 const files = [];
-                for (const sub of ['apps', 'places']) {
+                for (const sub of ['status']) {
                     const en2 = Gio.File.new_for_path(`${tdir}/scalable/${sub}`).enumerate_children('standard::name', Gio.FileQueryInfoFlags.NONE, null);
                     for (let i = en2.next_file(null); i; i = en2.next_file(null)) files.push(`${tdir}/scalable/${sub}/${i.get_name()}`);
                 }
                 const [, , err, status] = GLib.spawn_sync(null, ['xmllint', '--noout', ...files], null, GLib.SpawnFlags.SEARCH_PATH, null);
-                check('every icon file is valid XML, so no app is left without an icon', status === 0, status === 0 ? `${files.length} files` : new TextDecoder().decode(err).slice(0, 160));
+                check('the wheel icon file is valid XML', status === 0, status === 0 ? `${files.length} files` : new TextDecoder().decode(err).slice(0, 160));
             }
             check('the icon theme from before is remembered', new TextDecoder().decode(GLib.file_get_contents(`${GLib.get_user_cache_dir()}/isobar/icons-previous`)[1]).startsWith('Papirus'));
         }
@@ -216,7 +213,12 @@ export default class MistDriver extends Extension {
                 check('light/dark, icons and pointer are left alone until the user switches them on', iface.get_string('color-scheme') === ifaceStart && iface.get_string('icon-theme') === 'Papirus-Light' && iface.get_string('cursor-theme') === 'DMZ-Black', `${iface.get_string('color-scheme')} ${iface.get_string('icon-theme')} ${iface.get_string('cursor-theme')}`);
             } else {
                 check('GNOME light/dark follows the wallpaper', iface.get_string('color-scheme') === (dark2 ? 'prefer-dark' : 'default'), iface.get_string('color-scheme'));
-                check('Papirus follows light/dark too', iface.get_string('icon-theme') === (dark2 ? 'Papirus-Dark' : 'Papirus-Light'), iface.get_string('icon-theme'));
+                // Isobar's theme only carries the wheel and inherits Papirus, so it is the parent that follows light and dark
+                const themeNow = iface.get_string('icon-theme');
+                const parent = /^Isobar/.test(themeNow)
+                    ? (new TextDecoder().decode(GLib.file_get_contents(`${GLib.get_user_data_dir()}/icons/${themeNow}/index.theme`)[1]).match(/Inherits=(.*)/) ?? [])[1]
+                    : themeNow;
+                check('Papirus follows light/dark too', parent === (dark2 ? 'Papirus-Dark' : 'Papirus-Light'), `${themeNow} inherits ${parent}`);
                 check('the cursor follows light/dark too', iface.get_string('cursor-theme') === (dark2 ? 'DMZ-White' : 'DMZ-Black'), iface.get_string('cursor-theme'));
             }
             const mist2 = read(`${cfg}/gtk-4.0/mist.css`);
